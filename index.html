@@ -1,0 +1,3147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>耳語</title>
+        <link rel="icon" type="image/png" href="https://static.wixstatic.com/media/e2da02_1e6da40639e14818b42b4620a05523ed~mv2.png">
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            background: #1a1a2e;
+            font-family: 'Courier New', monospace;
+        }
+        
+        #gameCanvas {
+            display: block;
+            background: #0f3460;
+            image-rendering: pixelated;
+            image-rendering: crisp-edges;
+            position: absolute;
+            left: 0;
+            top: 0;
+        }
+        
+        #sidePanel {
+            position: absolute;
+            right: 0;
+            top: 0;
+            width: 300px;
+            height: 100vh;
+            background: linear-gradient(145deg, #1e293b 0%, #334155 100%);
+            border-left: 3px solid #f59e0b;
+            overflow-y: auto;
+            padding: 20px;
+            box-sizing: border-box;
+            box-shadow: -4px 0 20px rgba(0, 0, 0, 0.3);
+        }
+        
+        .panel-section {
+            margin-bottom: 30px;
+            border-bottom: 1px solid rgba(148, 163, 184, 0.3);
+            padding-bottom: 20px;
+            background: linear-gradient(135deg, rgba(30, 41, 59, 0.4) 0%, rgba(51, 65, 85, 0.2) 100%);
+            padding: 16px;
+            border-radius: 8px;
+            border: 1px solid rgba(245, 158, 11, 0.2);
+        }
+        
+        .panel-title {
+            color: #fbbf24;
+            font-size: 16px;
+            font-weight: bold;
+            margin-bottom: 12px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            text-shadow: 0 0 10px rgba(251, 191, 36, 0.3);
+        }
+        
+        .panel-content {
+            color: #cbd5e1;
+            font-size: 14px;
+            line-height: 1.6;
+        }
+        
+        .stat-item {
+            margin: 8px 0;
+        }
+        
+        #loading {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100vh;
+            background: 
+                repeating-linear-gradient(
+                    0deg,
+                    rgba(0, 0, 0, 0.03) 0px,
+                    rgba(0, 0, 0, 0.03) 1px,
+                    transparent 1px,
+                    transparent 2px
+                ),
+                repeating-linear-gradient(
+                    90deg,
+                    rgba(0, 0, 0, 0.03) 0px,
+                    rgba(0, 0, 0, 0.03) 1px,
+                    transparent 1px,
+                    transparent 2px
+                ),
+                linear-gradient(145deg, #e8dcc8 0%, #d4c4a8 100%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+            transition: opacity 0.8s ease, visibility 0.8s ease;
+            position: relative;
+        }
+        
+        #loading::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: 
+                radial-gradient(circle at 20% 50%, transparent 0%, rgba(0,0,0,0.02) 100%),
+                radial-gradient(circle at 80% 50%, transparent 0%, rgba(0,0,0,0.02) 100%);
+            pointer-events: none;
+        }
+        
+        #loading::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: 
+                url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100"><filter id="noise"><feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="4" stitchTiles="stitch"/></filter><rect width="100" height="100" filter="url(%23noise)" opacity="0.05"/></svg>');
+            opacity: 0.4;
+            pointer-events: none;
+        }
+        
+        #loading.hidden {
+            opacity: 0;
+            visibility: hidden;
+        }
+        
+        .loading-content {
+            background: linear-gradient(to bottom, #f5f5dc 0%, #e8e8d0 100%);
+            border: 4px double #2c2c2c;
+            box-shadow: 
+                0 0 0 2px #1a1a1a,
+                0 0 0 6px #f5f5dc,
+                0 0 0 8px #2c2c2c,
+                0 30px 60px rgba(0, 0, 0, 0.6),
+                inset 0 2px 10px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            position: relative;
+            max-width: 700px;
+            padding: 70px 90px;
+            z-index: 1;
+        }
+        
+        .loading-content::before {
+            content: '';
+            position: absolute;
+            top: 15px;
+            left: 15px;
+            right: 15px;
+            bottom: 15px;
+            border: 1px solid rgba(0, 0, 0, 0.15);
+            pointer-events: none;
+        }
+        
+        /* Coffee stain rings */
+        .loading-content::after {
+            content: '';
+            position: absolute;
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            border: 3px solid rgba(101, 67, 33, 0.15);
+            top: 30px;
+            right: 40px;
+            box-shadow: 
+                inset 0 0 10px rgba(101, 67, 33, 0.08),
+                0 0 5px rgba(101, 67, 33, 0.1);
+            pointer-events: none;
+        }
+        
+        .coffee-stain-2 {
+            position: absolute;
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            border: 2px solid rgba(101, 67, 33, 0.12);
+            bottom: 50px;
+            left: 50px;
+            box-shadow: 
+                inset 0 0 8px rgba(101, 67, 33, 0.06),
+                0 0 4px rgba(101, 67, 33, 0.08);
+            pointer-events: none;
+        }
+        
+        /* Corner ornaments */
+        .corner-ornament {
+            position: absolute;
+            width: 40px;
+            height: 40px;
+            border: 2px solid rgba(0, 0, 0, 0.2);
+            pointer-events: none;
+        }
+        
+        .corner-ornament.top-left {
+            top: 20px;
+            left: 20px;
+            border-right: none;
+            border-bottom: none;
+        }
+        
+        .corner-ornament.top-right {
+            top: 20px;
+            right: 20px;
+            border-left: none;
+            border-bottom: none;
+        }
+        
+        .corner-ornament.bottom-left {
+            bottom: 20px;
+            left: 20px;
+            border-right: none;
+            border-top: none;
+        }
+        
+        .corner-ornament.bottom-right {
+            bottom: 20px;
+            right: 20px;
+            border-left: none;
+            border-top: none;
+        }
+        
+        /* Case number stamp */
+        .case-stamp {
+            position: absolute;
+            top: 25px;
+            left: 30px;
+            font-family: 'Courier New', monospace;
+            font-size: 11px;
+            font-weight: bold;
+            color: rgba(139, 0, 0, 0.6);
+            letter-spacing: 1px;
+            transform: rotate(-5deg);
+            border: 2px solid rgba(139, 0, 0, 0.4);
+            padding: 6px 12px;
+            background: rgba(139, 0, 0, 0.05);
+            text-transform: uppercase;
+            pointer-events: none;
+            box-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        
+        .loading-title {
+            color: #1a1a1a;
+            font-size: 72px;
+            font-weight: 900;
+            margin-bottom: 8px;
+            text-transform: uppercase;
+            letter-spacing: 12px;
+            text-shadow: 
+                3px 3px 0px rgba(0, 0, 0, 0.1),
+                1px 1px 0px rgba(0, 0, 0, 0.2);
+            font-family: 'Courier New', Courier, monospace;
+            line-height: 1;
+        }
+        
+        .loading-subtitle {
+            color: #8b0000;
+            font-size: 18px;
+            margin-bottom: 50px;
+            letter-spacing: 6px;
+            text-transform: uppercase;
+            font-weight: bold;
+            font-family: 'Courier New', Courier, monospace;
+            border-top: 2px solid #2c2c2c;
+            border-bottom: 2px solid #2c2c2c;
+            padding: 10px 0;
+            margin-top: 20px;
+        }
+        
+        .mystery-icons {
+            display: flex;
+            justify-content: center;
+            gap: 50px;
+            margin-bottom: 50px;
+            font-size: 48px;
+            filter: grayscale(60%) contrast(1.2);
+        }
+        
+        .mystery-icon {
+            animation: typewriterBounce 2s ease-in-out infinite;
+            opacity: 0.85;
+        }
+        
+        .mystery-icon:nth-child(1) {
+            animation-delay: 0s;
+        }
+        
+        .mystery-icon:nth-child(2) {
+            animation-delay: 0.3s;
+        }
+        
+        .mystery-icon:nth-child(3) {
+            animation-delay: 0.6s;
+        }
+        
+        .loading-bar-container {
+            width: 100%;
+            margin-bottom: 25px;
+        }
+        
+        .loading-bar {
+            width: 100%;
+            height: 24px;
+            background: 
+                repeating-linear-gradient(
+                    45deg,
+                    #3a3a3a,
+                    #3a3a3a 10px,
+                    #2c2c2c 10px,
+                    #2c2c2c 20px
+                );
+            overflow: hidden;
+            border: 3px solid #1a1a1a;
+            box-shadow: 
+                inset 0 3px 6px rgba(0, 0, 0, 0.5),
+                0 2px 4px rgba(0, 0, 0, 0.3);
+            position: relative;
+        }
+        
+        .loading-bar-fill {
+            height: 100%;
+            background: linear-gradient(90deg, 
+                #8b0000 0%, 
+                #a00000 25%,
+                #8b0000 50%,
+                #a00000 75%,
+                #8b0000 100%
+            );
+            animation: fillBar 3s ease-in-out forwards, shimmer 1.5s ease-in-out infinite;
+            box-shadow: 
+                inset 0 2px 4px rgba(255, 255, 255, 0.2),
+                0 0 15px rgba(139, 0, 0, 0.5);
+            position: relative;
+        }
+        
+        .loading-bar-fill::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 50%;
+            background: linear-gradient(180deg, rgba(255, 255, 255, 0.2) 0%, transparent 100%);
+        }
+        
+        .loading-text {
+            color: #2c2c2c;
+            font-size: 14px;
+            letter-spacing: 3px;
+            font-weight: bold;
+            font-family: 'Courier New', Courier, monospace;
+            text-transform: uppercase;
+            margin-top: 5px;
+            overflow: hidden;
+            white-space: nowrap;
+            border-right: 3px solid #2c2c2c;
+            animation: 
+                typewriter 3s steps(25) 1s forwards,
+                blinkCursor 0.75s step-end infinite;
+            width: 0;
+            margin-left: auto;
+            margin-right: auto;
+            display: inline-block;
+        }
+        
+        @keyframes typewriter {
+            from { 
+                width: 0; 
+            }
+            to { 
+                width: 100%; 
+                border-right-color: transparent;
+            }
+        }
+        
+        @keyframes blinkCursor {
+            0%, 49% { border-right-color: #2c2c2c; }
+            50%, 100% { border-right-color: transparent; }
+        }
+        
+        @keyframes fillBar {
+            0% { width: 0%; }
+            100% { width: 100%; }
+        }
+        
+        @keyframes typewriterBounce {
+            0%, 100% { 
+                transform: translateY(0px) scale(1);
+                opacity: 0.85;
+            }
+            50% { 
+                transform: translateY(-8px) scale(1.05);
+                opacity: 1;
+            }
+        }
+        
+        @keyframes shimmer {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.9; }
+        }
+        
+        @keyframes blinkCursor {
+            0%, 49% { border-right-color: #2c2c2c; }
+            50%, 100% { border-right-color: transparent; }
+        }
+        
+        #minimap {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            width: 150px;
+            background: rgba(0, 0, 0, 0.7);
+            border: 3px solid #2ecc71;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        
+        #minimapCanvas {
+            width: 100%;
+            height: 100%;
+            cursor: pointer;
+        }
+        
+        #minimapViewport {
+            position: absolute;
+            border: 2px solid #3498db;
+            background: rgba(52, 152, 219, 0.2);
+            pointer-events: none;
+        }
+        
+        #playerDot {
+            position: absolute;
+            width: 8px;
+            height: 8px;
+            background: red;
+            border-radius: 50%;
+            border: 2px solid white;
+            pointer-events: none;
+            z-index: 10;
+        }
+
+        #cluesBox {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            width: 260px;
+            background: linear-gradient(145deg, #1a1f2e 0%, #2d3748 100%);
+            border: 2px solid #f59e0b;
+            border-radius: 12px;
+            padding: 14px 16px;
+            color: #ecf0f1;
+            font-size: 12px;
+            z-index: 100;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4), 
+                        0 0 0 1px rgba(245, 158, 11, 0.2) inset;
+            backdrop-filter: blur(10px);
+            max-height: 85vh;
+            overflow-y: auto;
+        }
+
+        #cluesBox .clues-title {
+            color: #fbbf24;
+            font-size: 14px;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            margin-bottom: 10px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid rgba(245, 158, 11, 0.3);
+            text-shadow: 0 0 10px rgba(251, 191, 36, 0.5);
+        }
+
+        #cluesBox .clue-content {
+            color: #cbd5e1;
+            line-height: 1.5;
+            font-size: 11px;
+        }
+
+        #cluesBox .clue-item {
+            margin-bottom: 8px;
+            padding: 8px;
+            border-left: 3px solid rgba(245, 158, 11, 0.4);
+            background: rgba(15, 23, 42, 0.4);
+            border-radius: 4px;
+        }
+        
+        #cluesBox .clue-item:hover {
+            background: rgba(245, 158, 11, 0.1);
+            border-left-color: #fbbf24;
+            transform: translateX(2px);
+        }
+
+        #cluesBox .clue-hint {
+            font-size: 10px;
+            color: #94a3b8;
+            font-style: italic;
+            margin-top: 6px;
+        }
+        
+        #mysteryModal {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 500px;
+            max-width: 90vw;
+            max-height: 80vh;
+            background: linear-gradient(145deg, #1a1f2e, #2d3748);
+            border: 3px solid #f59e0b;
+            border-radius: 15px;
+            padding: 0;
+            z-index: 1001;
+            overflow: hidden;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.7);
+        }
+
+        #mysteryModal.show {
+            display: block;
+        }
+
+        .mystery-modal-header {
+            background: #0f172a;
+            padding: 15px 20px;
+            border-bottom: 3px solid #f59e0b;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .mystery-modal-title {
+            color: #fbbf24;
+            font-size: 20px;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+
+        #closeMysteryModal {
+            width: 30px;
+            height: 30px;
+            background: #1e293b;
+            border: 2px solid #f59e0b;
+            border-radius: 50%;
+            color: #fbbf24;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+        }
+
+        #closeMysteryModal:hover {
+            background: #f59e0b;
+            color: #000;
+            transform: scale(1.1);
+        }
+
+        .mystery-modal-content {
+            padding: 20px;
+            max-height: calc(80vh - 80px);
+            overflow-y: auto;
+            color: #cbd5e1;
+        }
+
+        .mystery-section {
+            margin-bottom: 20px;
+            padding: 15px;
+            background: rgba(15, 23, 42, 0.6);
+            border: 2px solid rgba(245, 158, 11, 0.3);
+            border-radius: 8px;
+        }
+
+        .mystery-section-title {
+            color: #fbbf24;
+            font-size: 16px;
+            font-weight: bold;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+        }
+
+        .mystery-section-content {
+            color: #cbd5e1;
+            line-height: 1.6;
+            font-size: 14px;
+        }
+
+        .evidence-item {
+            padding: 8px;
+            margin: 8px 0;
+            background: rgba(239, 68, 68, 0.1);
+            border-left: 3px solid #ef4444;
+            border-radius: 4px;
+        }
+
+        .riddle-item {
+            padding: 10px;
+            margin: 10px 0;
+            background: rgba(251, 191, 36, 0.1);
+            border: 2px solid rgba(251, 191, 36, 0.3);
+            border-radius: 6px;
+            font-style: italic;
+            color: #fde68a;
+        }
+        
+        .password-input-container {
+            margin: 20px 0;
+            padding: 20px;
+            background: rgba(15, 23, 42, 0.8);
+            border: 2px solid #ef4444;
+            border-radius: 8px;
+            text-align: center;
+        }
+        
+        .password-input-container input {
+            width: 100%;
+            padding: 12px;
+            font-size: 16px;
+            background: #0f172a;
+            border: 2px solid #f59e0b;
+            border-radius: 6px;
+            color: #fbbf24;
+            font-family: 'Courier New', monospace;
+            text-align: center;
+            margin-top: 10px;
+        }
+        
+        .password-input-container button {
+            margin-top: 10px;
+            padding: 10px 30px;
+            background: #f59e0b;
+            border: none;
+            border-radius: 6px;
+            color: #000;
+            font-weight: bold;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.2s;
+        }
+        
+        .password-input-container button:hover {
+            background: #fbbf24;
+            transform: scale(1.05);
+        }
+        
+        .password-error {
+            color: #ef4444;
+            margin-top: 10px;
+            font-weight: bold;
+        }
+        
+        .password-success {
+            color: #22c55e;
+            margin-top: 10px;
+            font-weight: bold;
+        }
+        
+        .vote-option {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 10px;
+            margin: 6px 0;
+            background: rgba(15, 23, 42, 0.6);
+            border: 2px solid rgba(245, 158, 11, 0.3);
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .vote-option:hover {
+            background: rgba(245, 158, 11, 0.2);
+            border-color: #f59e0b;
+            transform: translateX(2px);
+        }
+        
+        .vote-name {
+            color: #cbd5e1;
+            font-weight: bold;
+            font-size: 13px;
+        }
+        
+        .vote-count {
+            color: #fbbf24;
+            font-weight: bold;
+            font-size: 14px;
+            background: rgba(251, 191, 36, 0.2);
+            padding: 4px 8px;
+            border-radius: 4px;
+        }
+
+        #playerMarker {
+            position: absolute;
+            display: none;
+            font-size: 32px;
+            color: #ffeb3b;
+            text-shadow: 2px 2px 6px rgba(0,0,0,0.9), 0 0 10px rgba(255,235,59,0.8);
+            pointer-events: none;
+            z-index: 1000;
+            animation: bounceArrow 0.6s infinite;
+        }
+
+        @keyframes bounceArrow {
+            0%, 100% { transform: translateY(0) translateX(-50%); }
+            50% { transform: translateY(-12px) translateX(-50%); }
+        }
+
+        #characterPanel {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.8);
+            border: 3px solid #f59e0b;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            padding: 15px;
+            gap: 8px;
+            z-index: 200;
+        }
+
+        #infoButton {
+            position: absolute;
+            top: 20px;
+            right: 340px;
+            width: 50px;
+            height: 50px;
+            background: linear-gradient(145deg, #fbbf24, #f59e0b);
+            border: 3px solid #fcd34d;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            z-index: 300;
+            transition: all 0.3s;
+            box-shadow: 0 4px 15px rgba(251, 191, 36, 0.5);
+        }
+
+        #infoButton:hover {
+            transform: scale(1.1);
+            box-shadow: 0 6px 20px rgba(251, 191, 36, 0.7);
+        }
+
+        #infoButton span {
+            color: #7c2d12;
+            font-size: 32px;
+            font-weight: bold;
+            line-height: 1;
+        }
+        
+        .social-button {
+            position: absolute;
+            top: 20px;
+            width: 50px;
+            height: 50px;
+            background: rgba(30, 41, 59, 0.9);
+            border: 3px solid #64748b;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            z-index: 300;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+        }
+        
+        .social-button img {
+            width: 28px;
+            height: 28px;
+            object-fit: contain;
+            transition: all 0.3s ease;
+        }
+        
+        #githubButton img {
+            filter: invert(1) brightness(1);
+        }
+        
+        .social-button:hover {
+            transform: scale(1.15) rotate(5deg);
+            border-color: #f59e0b;
+            box-shadow: 0 6px 25px rgba(245, 158, 11, 0.6);
+        }
+        
+        .social-button:hover img {
+            transform: scale(1.1);
+        }
+        
+        #twitterButton {
+            right: 410px;
+        }
+        
+        #pumpButton {
+            right: 480px;
+        }
+        
+        #githubButton {
+            right: 550px;
+        }
+
+        #infoModal {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 600px;
+            max-width: 90vw;
+            max-height: 80vh;
+            background: linear-gradient(145deg, #fef3c7, #fde68a);
+            border: 4px solid #d97706;
+            border-radius: 15px;
+            padding: 30px;
+            z-index: 1000;
+            overflow-y: auto;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+        }
+
+        #infoModal.show {
+            display: block;
+        }
+
+        #modalOverlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            z-index: 999;
+        }
+
+        #modalOverlay.show {
+            display: block;
+        }
+
+        .modal-header {
+            color: #92400e;
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 20px;
+            text-align: center;
+            text-transform: uppercase;
+            border-bottom: 3px solid #d97706;
+            padding-bottom: 10px;
+        }
+
+        .modal-section {
+            margin-bottom: 25px;
+        }
+
+        .modal-section-title {
+            color: #92400e;
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+        }
+
+        .modal-content {
+            color: #78350f;
+            line-height: 1.6;
+            font-size: 14px;
+        }
+
+        .modal-content ul {
+            margin: 10px 0;
+            padding-left: 20px;
+        }
+
+        .modal-content li {
+            margin: 8px 0;
+        }
+
+        #closeModal {
+            position: absolute;
+            top: 10px;
+            right: 15px;
+            width: 35px;
+            height: 35px;
+            background: #d97706;
+            border: 2px solid #b45309;
+            border-radius: 50%;
+            color: white;
+            font-size: 20px;
+            font-weight: bold;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+        }
+
+        #closeModal:hover {
+            background: #b45309;
+            transform: scale(1.1);
+        }
+
+        #characterModal {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 500px;
+            max-width: 90vw;
+            max-height: 80vh;
+            background: linear-gradient(145deg, #8b4513, #654321);
+            border: 4px solid #d2691e;
+            border-radius: 15px;
+            padding: 0;
+            z-index: 1000;
+            overflow: hidden;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.7);
+        }
+
+        #characterModal.show {
+            display: block;
+        }
+
+        .char-modal-header {
+            background: #654321;
+            padding: 15px 20px;
+            border-bottom: 3px solid #d2691e;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .char-modal-title {
+            color: #fbbf24;
+            font-size: 20px;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+
+        #closeCharModal {
+            width: 30px;
+            height: 30px;
+            background: #8b4513;
+            border: 2px solid #d2691e;
+            border-radius: 50%;
+            color: #fbbf24;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+        }
+
+        #closeCharModal:hover {
+            background: #654321;
+            transform: scale(1.1);
+        }
+
+        .char-modal-content {
+            padding: 20px;
+            max-height: calc(80vh - 80px);
+            overflow-y: auto;
+        }
+
+        .char-profile-section {
+            background: #f5deb3;
+            border: 3px solid #d2691e;
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 20px;
+            display: flex;
+            gap: 15px;
+        }
+
+        .char-avatar {
+            width: 120px;
+            height: 120px;
+            background: white;
+            border: 3px solid #8b4513;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .char-avatar canvas {
+            image-rendering: pixelated;
+            image-rendering: crisp-edges;
+        }
+
+        .char-info {
+            flex: 1;
+        }
+
+        .char-description {
+            color: #4a2511;
+            font-size: 14px;
+            line-height: 1.6;
+            margin-bottom: 10px;
+        }
+
+        .awareness-section {
+            background: #f5e6d3;
+            border: 3px solid #d2691e;
+            border-radius: 8px;
+            padding: 12px;
+            margin-bottom: 20px;
+        }
+
+        .awareness-label {
+            color: #8b0000;
+            font-size: 14px;
+            font-weight: bold;
+            margin-bottom: 8px;
+        }
+
+        .awareness-bar {
+            width: 100%;
+            height: 30px;
+            background: #e0e0e0;
+            border-radius: 15px;
+            overflow: hidden;
+            border: 2px solid #8b4513;
+            position: relative;
+        }
+
+        .awareness-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #ef4444, #dc2626);
+            transition: width 0.3s ease;
+            border-radius: 13px;
+        }
+
+        .awareness-text {
+            position: absolute;
+            right: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #4a2511;
+            font-weight: bold;
+            font-size: 16px;
+        }
+
+        .conversations-section {
+            margin-top: 20px;
+        }
+
+        .conversation-box {
+            background: #fef9e7;
+            border: 3px solid #d2691e;
+            border-radius: 8px;
+            padding: 12px;
+            margin-bottom: 10px;
+        }
+
+        .conversation-timestamp {
+            color: #78350f;
+            font-size: 12px;
+            margin-bottom: 8px;
+            font-family: monospace;
+        }
+
+        .conversation-text {
+            color: #4a2511;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+
+        .conversation-from {
+            color: #8b0000;
+            font-weight: bold;
+            margin-bottom: 4px;
+        }
+
+        .conversation-to {
+            color: #1e40af;
+            font-weight: bold;
+            margin-bottom: 4px;
+        }
+
+        .character-card {
+            width: 64px;
+            background: rgba(30, 41, 59, 0.9);
+            border: 2px solid #64748b;
+            border-radius: 6px;
+            padding: 8px 5px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 5px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .character-card:hover {
+            border-color: #f59e0b;
+            transform: scale(1.05);
+        }
+
+        .character-card.active {
+            border-color: #22c55e;
+            background: rgba(34, 197, 94, 0.2);
+        }
+
+        .character-sprite {
+            width: 48px;
+            height: 64px;
+            image-rendering: pixelated;
+            image-rendering: crisp-edges;
+            margin: 0 auto;
+        }
+
+        .character-name {
+            color: #fff;
+            font-size: 9px;
+            text-align: center;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            line-height: 1.2;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+    <div id="loading">
+        <div class="loading-content">
+            <div class="case-stamp">案件 #001</div>
+            <div class="corner-ornament top-left"></div>
+            <div class="corner-ornament top-right"></div>
+            <div class="corner-ornament bottom-left"></div>
+            <div class="corner-ornament bottom-right"></div>
+            <div class="coffee-stain-2"></div>
+            
+            <div class="loading-title">耳語</div>
+            <div class="loading-subtitle">⚊ 耳語 ⚊</div>
+            <div class="mystery-icons">
+                <div class="mystery-icon">🔍</div>
+                <div class="mystery-icon">🗡️</div>
+                <div class="mystery-icon">💀</div>
+            </div>
+            <div class="loading-bar-container">
+                <div class="loading-bar">
+                    <div class="loading-bar-fill"></div>
+                </div>
+            </div>
+            <div class="loading-text">⚊ 案件档案加载中 ⚊</div>
+        </div>
+    </div>
+    <canvas id="gameCanvas"></canvas>
+    <div id="minimap">
+        <canvas id="minimapCanvas"></canvas>
+        <div id="minimapViewport"></div>
+        <div id="playerDot"></div>
+    </div>
+    
+    <div id="cluesBox">
+        <div class="clues-title">🔮 谜团</div>
+        <div class="clue-content">
+            <div class="clue-item" onclick="openMysteryModal('wilson')" style="cursor: pointer; transition: all 0.2s;">
+                <strong style="color: #fbbf24;">🔍 威尔逊失踪</strong> - 第三天
+            </div>
+            <div class="clue-item" onclick="openMysteryModal('insurance')" style="cursor: pointer; transition: all 0.2s;">
+                <strong style="color: #fbbf24;">💰 汤普森的秘密</strong> - 保险单
+            </div>
+            <div class="clue-item" onclick="openMysteryModal('ritual')" style="cursor: pointer; transition: all 0.2s;">
+                <strong style="color: #fbbf24;">🕯️ 1987年仪式</strong> - 七个名字
+            </div>
+            <div class="clue-item" onclick="openMysteryModal('caves')" style="cursor: pointer; transition: all 0.2s;">
+                <strong style="color: #fbbf24;">🗺️ 水下洞穴</strong> - 符号
+            </div>
+            <div class="clue-item" onclick="openMysteryModal('locked')" style="cursor: pointer; transition: all 0.2s; background: rgba(239, 68, 68, 0.2);">
+                <strong style="color: #ef4444;">🔒 锁定文件</strong> - 需要密码
+            </div>
+        </div>
+    </div>
+
+    <div id="playerMarker">⬇</div>
+    
+    <audio id="bgMusic" loop>
+        <source src="https://res.cloudinary.com/dpogkjjow/video/upload/v1760408598/Untitled_video_-_Made_with_Clipchamp_3_xj8vv5.mp4" type="audio/mpeg">
+    </audio>
+    
+    <div id="characterPanel"></div>
+    
+    <div id="infoButton">
+        <span>?</span>
+    </div>
+    
+    <a href="https://twitter.com/jingwanisland" target="_blank" class="social-button" id="twitterButton">
+        <img src="https://static.wixstatic.com/media/e2da02_75efd7a093fd4113a9662b914a541af9~mv2.jpg" alt="Twitter/X">
+    </a>
+    
+    <a href="https://four.meme/token/" target="_blank" class="social-button" id="pumpButton">
+        <img src="https://static.wixstatic.com/media/e2da02_dae6dd5c8f1047a1b0580b361f5a9404~mv2.png" alt="GMGN">
+    </a>
+    
+<a href="https://github.com/knowledgeCN/jingwanisland" target="_blank" class="social-button" id="githubButton">
+    <img src="https://static.wixstatic.com/media/e2da02_54130f69a18e424cb3f9e81f6d12aaab~mv2.png" alt="Github">
+</a>
+    
+    <div id="modalOverlay"></div>
+    
+    <div id="mysteryModal">
+        <div class="mystery-modal-header">
+            <div class="mystery-modal-title" id="mysteryModalTitle">Mystery Details</div>
+            <div id="closeMysteryModal">×</div>
+        </div>
+        <div class="mystery-modal-content" id="mysteryModalContent">
+        </div>
+    </div>
+    
+    <div id="characterModal">
+        <div class="char-modal-header">
+            <div class="char-modal-title" id="charModalName">Character Name</div>
+            <div id="closeCharModal">×</div>
+        </div>
+        <div class="char-modal-content">
+            <div class="char-profile-section">
+                <div class="char-avatar">
+                    <canvas id="charAvatarCanvas" width="100" height="100"></canvas>
+                </div>
+                <div class="char-info">
+                    <div class="char-description" id="charDescription">
+                        Character description goes here...
+                    </div>
+                </div>
+            </div>
+            
+            <div class="awareness-section">
+                <div class="awareness-label">觉察度</div>
+                <div class="awareness-bar">
+                    <div class="awareness-fill" id="awarenessFill" style="width: 0%"></div>
+                    <div class="awareness-text" id="awarenessText">0%</div>
+                </div>
+            </div>
+            
+            <div class="conversations-section" id="conversationsSection">
+            </div>
+        </div>
+    </div>
+    
+    <div id="infoModal">
+        <div id="closeModal">×</div>
+        <div class="modal-header">欢迎来到耳語</div>
+        
+        <div class="modal-section">
+            <div class="modal-section-title">关于项目</div>
+<div class="modal-content">
+    欢迎来到耳語 - 一款沉浸式互动悬疑游戏,您将探索一个充满秘密、阴谋和黑暗谋杀之谜的鲜活岛屿。这是一个完全实现的世界,AI驱动的角色自由漫游,每个人都隐藏着关于老威尔逊失踪的秘密。
+</div>
+        </div>
+        
+        <div class="modal-section">
+            <div class="modal-section-title">谜团</div>
+            <div class="modal-content">
+                老威尔逊已经消失得无影无踪。岛上还剩七名嫌疑人,每个人都有自己的动机、不在场证明和秘密。探索岛屿,阅读角色对话,解锁谜团文件,投票选出你认为有罪的人。你能在时间耗尽之前破案吗?
+            </div>
+        </div>
+        
+        <div class="modal-section">
+            <div class="modal-section-title">📜 岛屿传说与背景故事</div>
+            <div class="modal-content">
+                <strong>岛屿的黑暗历史:</strong><br><br>
+                
+                耳語不是一座普通的岛屿。一个多世纪以来,它一直被神秘失踪事件所困扰——总是在秋分时节,总是以13年为周期。当地人低声议论着古老的仪式、被诅咒的石圈,以及满月时会发出诡异光芒的水下洞穴。<br><br>
+                
+                <strong>1987年的仪式:</strong><br><br>
+                
+                一切在1987年发生了改变。七个绝望的岛民——债台高筑、面临破产——聚集在古老的石圈。他们举行了一场血祭,向他们不理解的力量寻求繁荣。仪式成功了……但需要付出代价。一个人必须死,其他人才能繁荣。他们抽签。汤普森的兄弟输了。<br><br>
+                
+                那晚只有两人幸存:一个名叫汤普森的年轻商人,和竹内武的祖父。其他人?他们就这样消失了。但汤普森的命运一夜之间改变了。几个月内,他拥有了岛上一半的土地。幸存者们立下誓约:永远不提发生的事。永远不回到石圈。永远、永远不要深挖过去。<br><br>
+                
+                <strong>七位居民:</strong><br><br>
+                
+                如今,几十年后,耳語上还剩七个人——每个人都因秘密、债务或血统被束缚在岛上。汤普森已成为岛上最富有的人,但他的财富建立在某种邪恶之上。威尔逊,年长的渔夫,花了数年时间调查失踪案件的模式。他发现了某些东西,威胁要揭露一切。<br><br>
+                
+                三天前,威尔逊消失了。他的咖啡还是温的。他的日记翻到一句未完成的话:"去对质——"<br><br>
+                
+                <strong>真相:</strong><br><br>
+                
+                没有诅咒。没有超自然力量。只有一个发现谋杀伪装成谜团很有利可图的人。50年来,汤普森一直在消灭任何威胁他帝国的人——利用仪式的传说作为掩护。保险欺诈。非法贷款。勒索。现在,最后一次谋杀,永远埋葬他的秘密。<br><br>
+                
+                岛屿不索取祭品。汤普森索取。
+            </div>
+        </div>
+        
+        <div class="modal-section">
+            <div class="modal-section-title">当前功能</div>
+            <div class="modal-content">
+                <ul>
+                    <li><strong>✓ 活生生的世界:</strong> 7个主要角色 + 10只羊以独特的AI行为在岛上漫游</li>
+                    <li><strong>✓ 深层传说:</strong> 超过50+角色对话揭示动机、秘密和证据</li>
+                    <li><strong>✓ 谜团系统:</strong> 5个主要谜团可供调查,包括密码保护的文件</li>
+                    <li><strong>✓ 投票机制:</strong> 实时社区投票,8分钟倒计时</li>
+                    <li><strong>✓ 角色档案:</strong> 查看觉察度和完整的对话记录</li>
+                    <li><strong>✓ 互动地图:</strong> 带碰撞检测的完全可探索岛屿</li>
+                </ul>
+            </div>
+        </div>
+        
+        <div class="modal-section">
+            <div class="modal-section-title">🚀 路线图 - 即将推出</div>
+            <div class="modal-content">
+                <ul>
+                    <li><strong>第2-7天系统:</strong> 谜团每天演变。新线索出现。角色记住你的互动。之前的投票影响未来事件。岛屿根据社区决定而变化。</li>
+                    <li><strong>实时AI对话:</strong> 与任何角色实时直接对话。他们会记住你说的话,根据个性回应,如果你问对问题可能会透露秘密。</li>
+                    <li><strong>动态后果:</strong> 投错了?面对后果。角色死亡。新谜团解锁。岛屿记住一切。每个选择都会永久改变世界。</li>
+                    <li><strong>可解锁地点:</strong> 发现隐藏区域——灯塔、水下洞穴、汤普森的豪宅、石圈。每个地点都有改变一切的证据。</li>
+                    <li><strong>角色关系:</strong> 观察关系演变。联盟形成。背叛发生。角色对投票做出反应,实时互相指控。</li>
+                    <li><strong>多重结局:</strong> 你的投票决定谁存活。根据你消灭谁和发现什么,有7+不同的结局。你能拯救无辜者吗?</li>
+                    <li><strong>语音表演和过场动画:</strong> 完全语音对话。动画过场揭示关键时刻。见证谋杀、仪式和对抗。</li>
+                    <li><strong>NFT集成:</strong> 拥有你的角色。你的选择在链上永久化。交易证据。用代币投票。区块链记住一切。</li>
+                    <li><strong>社区活动:</strong> 实时全岛活动。风暴揭示隐藏证据。满月仪式。紧急镇民大会,所有人一起投票。</li>
+                    <li><strong>逃脱:</strong> 最后章节——确认凶手,收集证据,对质他们,逃离岛屿……或成为下一个受害者。</li>
+                </ul>
+            </div>
+        </div>
+        
+        <div class="modal-section">
+            <div class="modal-section-title">如何游玩</div>
+            <div class="modal-content">
+                <ul>
+                    <li><strong>导航:</strong> 使用方向键(WASD)或拖动地图来探索整个岛屿</li>
+                    <li><strong>角色选择:</strong> 点击底部的角色肖像立即跳转到他们的位置</li>
+                    <li><strong>角色档案:</strong> 直接点击角色查看他们的档案、觉察度和完整对话历史</li>
+                    <li><strong>小地图:</strong> 点击小地图上的任何地方快速前往该位置</li>
+                    <li><strong>谜团线索:</strong> 点击左上角线索框中的任何谜团调查证据和谜语</li>
+                    <li><strong>锁定文件:</strong> 在角色对话中找到隐藏的密码来解锁关键证据</li>
+                    <li><strong>投票:</strong> 在8分钟计时器到期前在右侧面板投出你的一票</li>
+                </ul>
+            </div>
+        </div>
+        
+        <div class="modal-section">
+            <div class="modal-section-title">嫌疑人</div>
+            <div class="modal-content">
+                <strong>李雪</strong> - 一位友好的村民,对岛屿了如指掌。但她知道的太多了吗?<br><br>
+                <strong>王明</strong> - 一位保护岛屿的勇敢战士。还是他在保护别的东西?<br><br>
+                <strong>张杰克</strong> - 一位有故事可讲的当地渔夫。还有要隐藏的债务。<br><br>
+                <strong>伯尼</strong> - 一位为变革而战的热情活动家。但挪用捐款去赌博?<br><br>
+                <strong>柴犬</strong> - 一只忠诚的狗在探索岛屿。他不断发现令人不安的证据……<br><br>
+                <strong>竹内武</strong> - 一位交易商品的传统商人。用秘密交易每月1万美元。<br><br>
+                <strong>汤普森先生</strong> - 一位有许多秘密的老商人。最可疑的一个。
+            </div>
+        </div>
+        
+        <div class="modal-section">
+            <div class="modal-section-title">破案提示</div>
+            <div class="modal-content">
+                <ul>
+                    <li>阅读所有角色对话——关键线索隐藏在各处</li>
+                    <li>寻找证据中的模式——日期、数字和符号很重要</li>
+                    <li>解锁威尔逊证据的密码隐藏在对话中</li>
+                    <li>注意谁从威尔逊的失踪中获益最多</li>
+                    <li>不是每个人都在撒谎,但每个人都在隐藏某些东西</li>
+                    <li>1987年的仪式是理解模式的关键</li>
+                </ul>
+            </div>
+        </div>
+        
+        <div class="modal-section">
+            <div class="modal-section-title">🔍 专业提示 - 高级策略</div>
+            <div class="modal-content">
+                <ul>
+                    <li><strong>跟踪金钱:</strong> 谁从威尔逊的死亡中获得经济利益?在对话中寻找保险单、财产所有权变更和未偿债务。</li>
+                    <li><strong>观察动物行为:</strong> 动物常常能感知人类错过的东西。注意狗避开谁、攻击谁,以及它不断发现什么证据。</li>
+                    <li><strong>寻找模式:</strong> 某些数字和日期不断出现。当事件以特定间隔重复时,很少是巧合。</li>
+                    <li><strong>每个人都有秘密:</strong> 每个角色都在隐藏某些东西。有些人隐藏小罪行。一个人隐藏谋杀。区分有罪行为和实际罪行。</li>
+                    <li><strong>密码被隐藏了:</strong> 锁定的文件包含确凿证据。密码在对话中的某处提到——寻找不寻常的单词或数字组合。</li>
+                    <li><strong>交叉引用故事:</strong> 比较不同角色对同一事件的说法。谁在撒谎?谁在说部分真相?矛盾揭示意图。</li>
+                    <li><strong>时间就是证据:</strong> 对话上的时间戳很重要。谁在什么时候在哪里?谁声称的不在场证明与时间线不符?</li>
+                    <li><strong>动机与机会:</strong> 许多人有理由想让威尔逊消失。但只有一个人既有手段又有历史来真正做到。想得比这次谋杀更深远。</li>
+                </ul>
+            </div>
+        </div>
+        
+        <div class="modal-section">
+            <div class="modal-section-title">❓ 常见问题</div>
+            <div class="modal-content">
+                <ul>
+                    <li><strong>我可以改变投票吗?</strong> 不行,一旦投票就锁定了。请谨慎选择!</li>
+                    <li><strong>计时器结束时会发生什么?</strong> 投票关闭并公布裁决。得票最多的角色被宣布有罪,后果将在未来几天展开。</li>
+                    <li><strong>如何解锁密码保护的文件?</strong> 密码隐藏在某个角色对话中。寻找提到年份和仪式的地方。提示:检查竹内武或柴犬发现了什么。</li>
+                    <li><strong>觉察度是什么意思?</strong> 每个角色都有一个觉察度(0-100%),显示他们对谜团了解多少。觉察度越高=对凶手越危险。</li>
+                    <li><strong>会有更多天/章节吗?</strong> 是的!这是第1天。未来更新将添加第2-7天,包含新谜团、角色死亡和根据你的投票演变的故事情节。</li>
+                    <li><strong>可以在手机上玩吗?</strong> 游戏在手机上可以运行,但针对桌面进行了优化。手机改进将在未来更新中推出。</li>
+                    <li><strong>真的有正确答案吗?</strong> 是的。威尔逊留下了证明凶手是谁的证据。解锁密码保护的文件查看真相。</li>
+                    <li><strong>如果我投错了人怎么办?</strong> 无辜的人可能会死。真正的凶手仍然逍遥法外。你的选择在未来章节中会有后果。</li>
+                </ul>
+            </div>
+        </div>
+        
+    </div>
+    
+    <div id="sidePanel">
+        <div class="panel-section">
+            <div class="panel-title">日期追踪:第一天</div>
+            <div class="panel-content">
+                <div class="stat-item">直播:X平台</div>
+                <div class="stat-item" style="font-size: 12px; cursor: pointer; background: rgba(245, 158, 11, 0.1); padding: 8px; border-radius: 4px; border: 1px solid rgba(245, 158, 11, 0.3);" onclick="copyCA()" title="点击复制">
+                    <strong style="color: #fbbf24;">合约地址:</strong> <span id="caText" style="word-break: break-all; display: block;">待公佈</span>
+                </div>
+            </div>
+        </div>
+        
+        <div class="panel-section">
+            <div class="panel-title">投票 - 谁有罪?</div>
+            <div class="panel-content">
+                <div class="stat-item"><strong>剩余时间: <span id="countdown">8:00</span></strong></div>
+                <div style="margin-top: 12px;">
+                    <div class="vote-option" onclick="vote('李雪')">
+                        <span class="vote-name">李雪</span>
+                        <span class="vote-count" id="vote-李雪">0</span>
+                    </div>
+                    <div class="vote-option" onclick="vote('王明')">
+                        <span class="vote-name">王明</span>
+                        <span class="vote-count" id="vote-王明">0</span>
+                    </div>
+                    <div class="vote-option" onclick="vote('张杰克')">
+                        <span class="vote-name">张杰克</span>
+                        <span class="vote-count" id="vote-张杰克">0</span>
+                    </div>
+                    <div class="vote-option" onclick="vote('伯尼')">
+                        <span class="vote-name">伯尼</span>
+                        <span class="vote-count" id="vote-伯尼">0</span>
+                    </div>
+                    <div class="vote-option" onclick="vote('柴犬')">
+                        <span class="vote-name">柴犬</span>
+                        <span class="vote-count" id="vote-柴犬">0</span>
+                    </div>
+                    <div class="vote-option" onclick="vote('竹内武')">
+                        <span class="vote-name">竹内武</span>
+                        <span class="vote-count" id="vote-竹内武">0</span>
+                    </div>
+                    <div class="vote-option" onclick="vote('汤普森先生')">
+                        <span class="vote-name">汤普森先生</span>
+                        <span class="vote-count" id="vote-汤普森先生">0</span>
+                    </div>
+                </div>
+                <div id="guiltyAnnouncement" style="display: none; background: rgba(239, 68, 68, 0.3); border: 3px solid #ef4444; border-radius: 8px; padding: 15px; margin-top: 15px; text-align: center;">
+                    <div style="color: #fbbf24; font-size: 18px; font-weight: bold; margin-bottom: 8px;">🔴 有罪判决 🔴</div>
+                    <div id="guiltyName" style="color: #fff; font-size: 22px; font-weight: bold; text-transform: uppercase; margin-bottom: 10px;"></div>
+                    <div id="guiltyReason" style="color: #cbd5e1; font-size: 13px; line-height: 1.5;"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const loading = document.getElementById('loading');
+        const minimapCanvas = document.getElementById('minimapCanvas');
+        const minimapCtx = minimapCanvas.getContext('2d');
+        const minimapViewport = document.getElementById('minimapViewport');
+        const playerDot = document.getElementById('playerDot');
+        const playerMarker = document.getElementById('playerMarker');
+        
+        // Background Music Setup
+        const bgMusic = document.getElementById('bgMusic');
+        bgMusic.volume = 0.5; // 50% volume
+        let musicStarted = false;
+        
+        function startMusic() {
+            if (!musicStarted) {
+                bgMusic.play().catch(e => console.log('Music autoplay prevented:', e));
+                musicStarted = true;
+            }
+        }
+        
+        // Start music on any user interaction
+        document.addEventListener('click', startMusic, { once: true });
+        document.addEventListener('keydown', startMusic, { once: true });
+        canvas.addEventListener('mousedown', startMusic, { once: true });
+        
+        let selectedCharacter = null;
+        
+        const sidePanelWidth = 300;
+        canvas.width = window.innerWidth - sidePanelWidth;
+        canvas.height = window.innerHeight;
+        
+        const camera = {
+            x: 0,
+            y: 0,
+            speed: 5
+        };
+        
+        const player = {
+            x: 0,
+            y: 0
+        };
+        
+        let scale = 1;
+        let worldWidth = 0;
+        
+        const keys = {};
+        let isDragging = false;
+        let dragStart = { x: 0, y: 0 };
+        
+        let waterOffset = 0;
+        let worldHeight = 0;
+        
+        const worldImage = new Image();
+        worldImage.crossOrigin = "anonymous";
+        
+        let collisionCanvas = null;
+        let collisionCtx = null;
+        
+        const femaleSprite = new Image();
+        const maleSprite = new Image();
+        const warriorSprite = new Image();
+        const sheep1Sprite = new Image();
+        const sheep2Sprite = new Image();
+        const sheep3Sprite = new Image();
+        const sheep4Sprite = new Image();
+        const sheep5Sprite = new Image();
+        const shibaSprite = new Image();
+        const japaneseSprite = new Image();
+        const businessmanSprite = new Image();
+        const bernieSprite = new Image();
+        
+        const SPRITE_WIDTH = 24;
+        const SPRITE_HEIGHT = 32;
+        const FRAMES_PER_ANIMATION = 8;
+        
+        const SHEEP_WIDTH = 40;
+        const SHEEP_HEIGHT = 30;
+        
+        const characters = [];
+        
+        let imagesLoaded = 0;
+        const totalImages = 13;
+        const loadStartTime = Date.now();
+        const minimumLoadTime = 3000; // 3 seconds minimum
+        
+        function checkImagesLoaded() {
+            imagesLoaded++;
+            console.log('Image loaded! Total:', imagesLoaded);
+            if (imagesLoaded === totalImages) {
+                const elapsedTime = Date.now() - loadStartTime;
+                const remainingTime = Math.max(0, minimumLoadTime - elapsedTime);
+                
+                // Wait for minimum load time, then fade out
+                setTimeout(() => {
+                    loading.classList.add('hidden');
+                }, remainingTime + 500);
+                
+                worldWidth = worldImage.width;
+                worldHeight = worldImage.height;
+                
+                console.log('Starting game with world:', worldWidth, 'x', worldHeight);
+                
+                scale = canvas.width / worldWidth;
+                
+                camera.y = 0;
+                camera.x = 0;
+                
+                updatePlayerPosition();
+                
+                createCharacters();
+                createCharacterPanel();
+                
+                console.log('Characters created:', characters.length);
+                characters.forEach(char => {
+                    console.log(char.name, 'speed:', char.speed, 'direction:', char.direction);
+                });
+                
+                collisionCanvas = document.createElement('canvas');
+                collisionCanvas.width = worldWidth;
+                collisionCanvas.height = worldHeight;
+                collisionCtx = collisionCanvas.getContext('2d');
+                collisionCtx.drawImage(worldImage, 0, 0);
+                
+                const minimapWidth = 150;
+                const aspectRatio = worldHeight / worldWidth;
+                const minimapHeight = minimapWidth * aspectRatio;
+                
+                minimapCanvas.width = minimapWidth;
+                minimapCanvas.height = minimapHeight;
+                
+                document.getElementById('minimap').style.height = minimapHeight + 'px';
+                
+                gameLoop();
+            }
+        }
+        
+        worldImage.onload = checkImagesLoaded;
+        femaleSprite.onload = checkImagesLoaded;
+        maleSprite.onload = checkImagesLoaded;
+        warriorSprite.onload = checkImagesLoaded;
+        sheep1Sprite.onload = checkImagesLoaded;
+        sheep2Sprite.onload = checkImagesLoaded;
+        sheep3Sprite.onload = checkImagesLoaded;
+        sheep4Sprite.onload = checkImagesLoaded;
+        sheep5Sprite.onload = checkImagesLoaded;
+        shibaSprite.onload = checkImagesLoaded;
+        japaneseSprite.onload = checkImagesLoaded;
+        businessmanSprite.onload = checkImagesLoaded;
+        bernieSprite.onload = checkImagesLoaded;
+        
+        worldImage.onerror = (e) => {
+            console.error('Failed to load world map', e);
+            loading.textContent = 'Error loading world map!';
+        };
+        
+        femaleSprite.onerror = (e) => { console.error('Failed to load female sprite', e); imagesLoaded++; checkImagesLoaded(); };
+        maleSprite.onerror = (e) => { console.error('Failed to load male sprite', e); imagesLoaded++; checkImagesLoaded(); };
+        warriorSprite.onerror = (e) => { console.error('Failed to load warrior sprite', e); imagesLoaded++; checkImagesLoaded(); };
+        sheep1Sprite.onerror = (e) => { console.error('Failed to load sheep1 sprite', e); imagesLoaded++; checkImagesLoaded(); };
+        sheep2Sprite.onerror = (e) => { console.error('Failed to load sheep2 sprite', e); imagesLoaded++; checkImagesLoaded(); };
+        sheep3Sprite.onerror = (e) => { console.error('Failed to load sheep3 sprite', e); imagesLoaded++; checkImagesLoaded(); };
+        sheep4Sprite.onerror = (e) => { console.error('Failed to load sheep4 sprite', e); imagesLoaded++; checkImagesLoaded(); };
+        sheep5Sprite.onerror = (e) => { console.error('Failed to load sheep5 sprite', e); imagesLoaded++; checkImagesLoaded(); };
+        shibaSprite.onerror = (e) => { console.error('Failed to load shiba sprite', e); imagesLoaded++; checkImagesLoaded(); };
+        japaneseSprite.onerror = (e) => { console.error('Failed to load japanese sprite', e); imagesLoaded++; checkImagesLoaded(); };
+        businessmanSprite.onerror = (e) => { console.error('Failed to load businessman sprite', e); imagesLoaded++; checkImagesLoaded(); };
+        bernieSprite.onerror = (e) => { console.error('Failed to load bernie sprite', e); imagesLoaded++; checkImagesLoaded(); };
+        
+        worldImage.src = 'https://static.wixstatic.com/media/e2da02_401161a1d9ff42809f0f35f595897fc1~mv2.png';
+        femaleSprite.src = 'https://static.wixstatic.com/media/e2da02_c9c61e45604e4a1bbad4adb2f4744ee2~mv2.png';
+        maleSprite.src = 'https://static.wixstatic.com/media/e2da02_8fd0dfab29ed48368d92c2873ac7b162~mv2.png';
+        warriorSprite.src = 'https://static.wixstatic.com/media/e2da02_809f4722ee6343b2ab0dcb8a995fefca~mv2.png';
+        sheep1Sprite.src = 'https://static.wixstatic.com/media/e2da02_b781d69551614cd4a89a9afa3fc8c58f~mv2.png';
+        sheep2Sprite.src = 'https://static.wixstatic.com/media/e2da02_54207982c0054df582af25500d4aecc0~mv2.png';
+        sheep3Sprite.src = 'https://static.wixstatic.com/media/e2da02_dabc224409104fb186f2c68a89a5c8a4~mv2.png';
+        sheep4Sprite.src = 'https://static.wixstatic.com/media/e2da02_e3b4d4862a6c4a9bb687fa4c6b05e042~mv2.png';
+        sheep5Sprite.src = 'https://static.wixstatic.com/media/e2da02_290ce7487f2d417e962a3f5a45e13fca~mv2.png';
+        shibaSprite.src = 'https://static.wixstatic.com/media/e2da02_982aa1a550504d3ba27db1d965b9f8ed~mv2.png';
+        japaneseSprite.src = 'https://static.wixstatic.com/media/e2da02_979b5a3746e145d6b0c568e2b46d03b1~mv2.png';
+        businessmanSprite.src = 'https://static.wixstatic.com/media/e2da02_d51c558682be43f587aa2817c74c3dde~mv2.png';
+        bernieSprite.src = 'https://static.wixstatic.com/media/e2da02_a830e2499c4e479dae43dd464f2b35d5~mv2.png';
+        
+        femaleSprite.crossOrigin = "anonymous";
+        maleSprite.crossOrigin = "anonymous";
+        warriorSprite.crossOrigin = "anonymous";
+        sheep1Sprite.crossOrigin = "anonymous";
+        sheep2Sprite.crossOrigin = "anonymous";
+        sheep3Sprite.crossOrigin = "anonymous";
+        sheep4Sprite.crossOrigin = "anonymous";
+        sheep5Sprite.crossOrigin = "anonymous";
+        shibaSprite.crossOrigin = "anonymous";
+        japaneseSprite.crossOrigin = "anonymous";
+        businessmanSprite.crossOrigin = "anonymous";
+        bernieSprite.crossOrigin = "anonymous";
+        
+        function isOnLand(x, y, charType = "human") {
+            if (!collisionCtx) return true;
+            
+            const spriteWidth = charType === "sheep" ? 40 : 24;
+            const spriteHeight = charType === "sheep" ? 30 : 32;
+            
+            const checkPoints = [
+                {x: x + spriteWidth/2, y: y + spriteHeight/2}
+            ];
+            
+            for (let point of checkPoints) {
+                const px = Math.floor(point.x);
+                const py = Math.floor(point.y);
+                
+                if (px < 0 || py < 0 || px >= worldWidth || py >= worldHeight) {
+                    return false;
+                }
+                
+                const pixelData = collisionCtx.getImageData(px, py, 1, 1).data;
+                const r = pixelData[0];
+                const g = pixelData[1];
+                const b = pixelData[2];
+                
+                if (b > 100) {
+                    return false;
+                }
+            }
+            
+            return true;
+        }
+        
+        function createCharacters() {
+            const safeRegions = [
+                {x: 100, y: 100, width: 400, height: 200},
+                {x: 600, y: 80, width: 450, height: 250},
+                {x: 1100, y: 120, width: 400, height: 200},
+                {x: 150, y: 400, width: 350, height: 250},
+                {x: 600, y: 450, width: 400, height: 200},
+                {x: 1050, y: 400, width: 450, height: 250},
+                {x: 200, y: 750, width: 400, height: 300},
+                {x: 700, y: 800, width: 350, height: 250},
+                {x: 1150, y: 750, width: 350, height: 300},
+                {x: 150, y: 1150, width: 400, height: 300},
+                {x: 650, y: 1200, width: 400, height: 250},
+                {x: 1100, y: 1150, width: 400, height: 300},
+                {x: 200, y: 1550, width: 400, height: 300},
+                {x: 700, y: 1600, width: 400, height: 250},
+                {x: 1150, y: 1550, width: 350, height: 300},
+                {x: 250, y: 1950, width: 400, height: 250},
+                {x: 750, y: 2000, width: 450, height: 200},
+                {x: 1250, y: 1950, width: 350, height: 250}
+            ];
+            
+            function getRandomPositionInRegion(region) {
+                let attempts = 0;
+                while (attempts < 100) {
+                    const testPos = {
+                        x: region.x + Math.random() * region.width,
+                        y: region.y + Math.random() * region.height
+                    };
+                    
+                    if (isOnLand(testPos.x, testPos.y)) {
+                        return testPos;
+                    }
+                    attempts++;
+                }
+                
+                return {
+                    x: region.x + region.width / 2,
+                    y: region.y + region.height / 2
+                };
+            }
+            
+            let pos = getRandomPositionInRegion(safeRegions[1]);
+            characters.push({
+                sprite: femaleSprite,
+                x: pos.x,
+                y: pos.y,
+                region: safeRegions[1],
+                homeX: pos.x,
+                homeY: pos.y,
+                roamRange: 2000,
+                direction: Math.floor(Math.random() * 4),
+                frame: 0,
+                frameCounter: 0,
+                speed: 0.2 + Math.random() * 0.1,
+                directionTimer: 0,
+                directionChangeInterval: Math.floor(Math.random() * 150) + 80,
+                pauseTimer: 0,
+                pauseDuration: 0,
+                isPaused: false,
+                name: "李雪",
+                description: "一位友好的村民,对岛屿了如指掌。",
+                type: "human"
+            });
+            
+            pos = getRandomPositionInRegion(safeRegions[2]);
+            characters.push({
+                sprite: warriorSprite,
+                x: pos.x,
+                y: pos.y,
+                region: safeRegions[2],
+                homeX: pos.x,
+                homeY: pos.y,
+                roamRange: 2000,
+                direction: Math.floor(Math.random() * 4),
+                frame: 0,
+                frameCounter: 0,
+                speed: 0.18 + Math.random() * 0.12,
+                directionTimer: 0,
+                directionChangeInterval: Math.floor(Math.random() * 140) + 70,
+                pauseTimer: 0,
+                pauseDuration: 0,
+                isPaused: false,
+                name: "王明",
+                description: "一位勇敢的战士,保护着岛屿。",
+                type: "human"
+            });
+            
+            pos = getRandomPositionInRegion(safeRegions[7]);
+            characters.push({
+                sprite: maleSprite,
+                x: pos.x,
+                y: pos.y,
+                region: safeRegions[7],
+                homeX: pos.x,
+                homeY: pos.y,
+                roamRange: 2000,
+                direction: Math.floor(Math.random() * 4),
+                frame: 0,
+                frameCounter: 0,
+                speed: 0.15 + Math.random() * 0.12,
+                directionTimer: 0,
+                directionChangeInterval: Math.floor(Math.random() * 160) + 90,
+                pauseTimer: 0,
+                pauseDuration: 0,
+                isPaused: false,
+                name: "张杰克",
+                description: "一位有故事的渔夫。",
+                type: "human"
+            });
+            
+            pos = getRandomPositionInRegion(safeRegions[10]);
+            characters.push({
+                sprite: bernieSprite,
+                x: pos.x,
+                y: pos.y,
+                region: safeRegions[10],
+                homeX: pos.x,
+                homeY: pos.y,
+                roamRange: 2000,
+                direction: Math.floor(Math.random() * 4),
+                frame: 0,
+                frameCounter: 0,
+                speed: 0.2 + Math.random() * 0.1,
+                directionTimer: 0,
+                directionChangeInterval: Math.floor(Math.random() * 170) + 100,
+                pauseTimer: 0,
+                pauseDuration: 0,
+                isPaused: false,
+                name: "伯尼",
+                description: "一位为变革而战的激情活动家。",
+                type: "human"
+            });
+            
+            pos = getRandomPositionInRegion(safeRegions[16]);
+            characters.push({
+                sprite: shibaSprite,
+                x: pos.x,
+                y: pos.y,
+                region: safeRegions[16],
+                homeX: pos.x,
+                homeY: pos.y,
+                roamRange: 2000,
+                direction: Math.floor(Math.random() * 4),
+                frame: 0,
+                frameCounter: 0,
+                speed: 0.22 + Math.random() * 0.12,
+                directionTimer: 0,
+                directionChangeInterval: Math.floor(Math.random() * 120) + 60,
+                pauseTimer: 0,
+                pauseDuration: 0,
+                isPaused: false,
+                name: "柴犬",
+                description: "一只忠诚的柴犬在岛上探索。",
+                type: "human"
+            });
+            
+            pos = getRandomPositionInRegion(safeRegions[14]);
+            characters.push({
+                sprite: japaneseSprite,
+                x: pos.x,
+                y: pos.y,
+                region: safeRegions[14],
+                homeX: pos.x,
+                homeY: pos.y,
+                roamRange: 2000,
+                direction: Math.floor(Math.random() * 4),
+                frame: 0,
+                frameCounter: 0,
+                speed: 0.16 + Math.random() * 0.12,
+                directionTimer: 0,
+                directionChangeInterval: Math.floor(Math.random() * 180) + 110,
+                pauseTimer: 0,
+                pauseDuration: 0,
+                isPaused: false,
+                name: "竹内武",
+                description: "一位贸易货物的传统商人。",
+                type: "human"
+            });
+            
+            pos = getRandomPositionInRegion(safeRegions[13]);
+            characters.push({
+                sprite: businessmanSprite,
+                x: pos.x,
+                y: pos.y,
+                region: safeRegions[13],
+                homeX: pos.x,
+                homeY: pos.y,
+                roamRange: 2000,
+                direction: Math.floor(Math.random() * 4),
+                frame: 0,
+                frameCounter: 0,
+                speed: 0.14 + Math.random() * 0.1,
+                directionTimer: 0,
+                directionChangeInterval: Math.floor(Math.random() * 200) + 130,
+                pauseTimer: 0,
+                pauseDuration: 0,
+                isPaused: false,
+                name: "汤普森先生",
+                description: "一位有许多秘密的老商人。",
+                type: "human"
+            });
+            
+            const sheepSprites = [sheep1Sprite, sheep2Sprite, sheep3Sprite, sheep4Sprite, sheep5Sprite];
+            const sheepColors = ["白色", "棕色", "黑色", "灰色", "花斑"];
+            const sheepRegionIndices = [15, 14, 12, 11, 9, 8, 6, 5, 4, 3];
+            
+            let sheepIdx = 0;
+            sheepSprites.forEach((sheepSprite, index) => {
+                for (let i = 0; i < 2; i++) {
+                    const region = safeRegions[sheepRegionIndices[sheepIdx]];
+                    pos = getRandomPositionInRegion(region);
+                    
+                    // Ensure valid starting position for black sheep and all others
+                    let validPos = pos;
+                    let posAttempts = 0;
+                    while (!isOnLand(validPos.x, validPos.y, "sheep") && posAttempts < 50) {
+                        validPos = getRandomPositionInRegion(region);
+                        posAttempts++;
+                    }
+                    
+                    characters.push({
+                        sprite: sheepSprite,
+                        x: validPos.x,
+                        y: validPos.y,
+                        homeX: validPos.x,
+                        homeY: validPos.y,
+                        region: region,
+                        roamRange: 1500,
+                        direction: Math.floor(Math.random() * 4),
+                        frame: 0,
+                        frameCounter: 0,
+                        speed: 0.2 + Math.random() * 0.15, // Increased speed range
+                        directionTimer: 0,
+                        directionChangeInterval: Math.floor(Math.random() * 180) + 100,
+                        pauseTimer: 0,
+                        pauseDuration: 0,
+                        isPaused: false,
+                        name: sheepColors[index] + "绵羊",
+                        description: "一只和平的" + sheepColors[index] + "绵羊在吃草。",
+                        type: "sheep"
+                    });
+                    sheepIdx++;
+                }
+            });
+        }
+        
+        function updateCharacters() {
+            characters.forEach(char => {
+                char.directionTimer++;
+                
+                if (char.directionTimer >= char.directionChangeInterval) {
+                    const randomChange = Math.random();
+                    if (randomChange < 0.7) {
+                        char.direction = Math.floor(Math.random() * 4);
+                    } else {
+                        char.direction = (char.direction + (Math.random() > 0.5 ? 1 : -1) + 4) % 4;
+                    }
+                    char.directionTimer = 0;
+                    char.directionChangeInterval = Math.floor(Math.random() * 200) + 100;
+                }
+                
+                const oldX = char.x;
+                const oldY = char.y;
+                
+                switch(char.direction) {
+                    case 0: char.y += char.speed; break;
+                    case 1: char.x -= char.speed; break;
+                    case 2: char.x += char.speed; break;
+                    case 3: char.y -= char.speed; break;
+                }
+                
+                let collision = false;
+                for (let other of characters) {
+                    if (other !== char) {
+                        const dx = char.x - other.x;
+                        const dy = char.y - other.y;
+                        const distance = Math.sqrt(dx * dx + dy * dy);
+                        
+                        if (distance < 18) {
+                            collision = true;
+                            break;
+                        }
+                    }
+                }
+                
+                if (collision || !isOnLand(char.x, char.y, char.type)) {
+                    char.x = oldX;
+                    char.y = oldY;
+                    char.direction = (char.direction + 2 + Math.floor(Math.random() * 2)) % 4;
+                }
+                
+                char.x = Math.max(10, Math.min(char.x, worldWidth - 50));
+                char.y = Math.max(10, Math.min(char.y, worldHeight - 50));
+                
+                char.frameCounter++;
+                if (char.frameCounter > 8) {
+                    char.frameCounter = 0;
+                    char.frame = (char.frame + 1) % FRAMES_PER_ANIMATION;
+                }
+            });
+        }
+        
+        function drawCharacters() {
+            ctx.save();
+            ctx.scale(scale, scale);
+            
+            const camX = camera.x / scale;
+            const camY = camera.y / scale;
+            
+            const drawScale = 2;
+            
+            characters.forEach(char => {
+                const screenX = char.x - camX;
+                const screenY = char.y - camY;
+                
+                const spriteWidth = char.type === "sheep" ? SHEEP_WIDTH : SPRITE_WIDTH;
+                const spriteHeight = char.type === "sheep" ? SHEEP_HEIGHT : SPRITE_HEIGHT;
+                
+                if (screenX > -spriteWidth * drawScale && screenX < canvas.width / scale &&
+                    screenY > -spriteHeight * drawScale && screenY < canvas.height / scale) {
+                    
+                    ctx.drawImage(
+                        char.sprite,
+                        0,
+                        0,
+                        spriteWidth,
+                        spriteHeight,
+                        screenX,
+                        screenY,
+                        spriteWidth * drawScale,
+                        spriteHeight * drawScale
+                    );
+                }
+            });
+            
+            ctx.restore();
+        }
+        
+        let selectedCharacterForModal = null;
+        
+        canvas.addEventListener('click', (e) => {
+            const rect = canvas.getBoundingClientRect();
+            const clickX = e.clientX - rect.left;
+            const clickY = e.clientY - rect.top;
+            
+            const worldClickX = (clickX / scale) + (camera.x / scale);
+            const worldClickY = (clickY / scale) + (camera.y / scale);
+            
+            characters.forEach(char => {
+                if (char.type === "human") {
+                    const distance = Math.sqrt(
+                        Math.pow(worldClickX - char.x, 2) + 
+                        Math.pow(worldClickY - char.y, 2)
+                    );
+                    
+                    if (distance < 40) {
+                        openCharacterModal(char);
+                    }
+                }
+            });
+        });
+        
+        function openCharacterModal(char) {
+            selectedCharacterForModal = char;
+            
+            document.getElementById('charModalName').textContent = char.name;
+            document.getElementById('charDescription').textContent = char.description;
+            
+            const awarenessLevel = char.awarenessLevel || Math.floor(Math.random() * 100);
+            char.awarenessLevel = awarenessLevel;
+            
+            document.getElementById('awarenessFill').style.width = awarenessLevel + '%';
+            document.getElementById('awarenessText').textContent = awarenessLevel + '%';
+            
+            const avatarCanvas = document.getElementById('charAvatarCanvas');
+            const avatarCtx = avatarCanvas.getContext('2d');
+            avatarCtx.imageSmoothingEnabled = false;
+            avatarCtx.clearRect(0, 0, 100, 100);
+            
+            const spriteWidth = char.type === "sheep" ? 40 : 24;
+            const spriteHeight = char.type === "sheep" ? 30 : 32;
+            
+            const scale = Math.min(100 / spriteWidth, 100 / spriteHeight) * 0.9;
+            const scaledWidth = spriteWidth * scale;
+            const scaledHeight = spriteHeight * scale;
+            
+            const offsetX = (100 - scaledWidth) / 2 - 10;
+            const offsetY = (100 - scaledHeight) / 2 + 5;
+            
+            avatarCtx.drawImage(char.sprite, 0, 0, spriteWidth, spriteHeight, offsetX, offsetY, scaledWidth, scaledHeight);
+            
+            const conversationsSection = document.getElementById('conversationsSection');
+            conversationsSection.innerHTML = '';
+            
+            const characterConversations = {
+                "柴犬": [
+                    {
+                        timestamp: '10/10/2025, 16:20:50',
+                        from: '杰克',
+                        to: '柴犬',
+                        text: '乖孩子，别怕！怎么了？你在洞穴附近闻到了什么？我从没见过你这么害怕……等等，你一直在汤普森的大门那里抓挠。只有闻到血腥味时你才会这样做。天哪。'
+                    },
+                    {
+                        timestamp: '10/10/2025, 14:55:33',
+                        from: '莎拉',
+                        to: '柴犬',
+                        text: '柴犬拒绝靠近北边的海滩。它呜咽着拼命往后拉，差点扯断了牵引绳。狗能感知到我们人类察觉不到的东西。但它一直给我带来撕裂的布料碎片——昂贵的布料，像是汤普森西装上的。而且上面沾着某种深色的东西。'
+                    },
+                    {
+                        timestamp: '10/10/2025, 12:08:44',
+                        from: '马库斯',
+                        to: '柴犬',
+                        text: '发现柴犬在古老的石圈附近疯狂地挖掘。它挖出了威尔逊夹克的一块碎片——上面覆盖着某种洗不掉的深色残留物。但下面还有一张名片："汤普森联合公司——收债务，守秘密"。'
+                    },
+                    {
+                        timestamp: '10/09/2025, 22:40:11',
+                        from: '柴犬',
+                        to: '杰克',
+                        text: '凌晨3点47分，柴犬对着月亮嚎叫，吵醒了整个家。指着灯塔的方向。直到日出才停下来。它的爪子上沾满了泥巴——和在采石场发现威尔逊夹克处的红土一样。'
+                    },
+                    {
+                        timestamp: '10/09/2025, 17:33:28',
+                        from: '武',
+                        to: '柴犬',
+                        text: '柴犬把我带到寺庙废墟附近的一个隐藏藏匿处。里面有：威尔逊的眼镜、一个奇怪的金属装置，还有一张用血标记了石圈的地图。但还有一张纸条："如果你在读这个，我已经死了。答案在于谁从我的沉默中获益最多。跟着钱走，不要跟着谜团。密码：1987RITUAL"'
+                    },
+                    {
+                        timestamp: '10/09/2025, 15:44:18',
+                        from: '伯尼',
+                        to: '柴犬',
+                        text: '柴犬今天攻击了汤普森——直接扑向他，露出牙齿。我们不得不把它拉开。汤普森的袖子被撕破了，而且……他手臂上有新鲜的抓痕。还有旧的抓痕，像是搏斗留下的。汤普森笑着说没事，但他的手在发抖。'
+                    },
+                    {
+                        timestamp: '10/09/2025, 09:22:55',
+                        from: '莎拉',
+                        to: '柴犬',
+                        text: '柴犬在海边发现了一个埋藏的保险箱。里面有我们七个人的照片，每张照片上都画了红色的叉，只有汤普森的除外。还有一个谜语："七罪一审判。七命一仇恨。当第八人寻真相，第一人将抹证据。"'
+                    }
+                ],
+                "李雪": [
+                    {
+                        timestamp: '10/10/2025, 15:59:32',
+                        from: '莎拉',
+                        to: '马库斯',
+                        text: '马库斯，我真的很担心。老威尔逊已经三天没来市场了。你知道他从不错过赶集日……我在他的摊位上发现了这张纸条："当七人围圈而立，第八人将永不可寻。"这是什么意思？'
+                    },
+                    {
+                        timestamp: '10/10/2025, 14:30:15',
+                        from: '马库斯',
+                        to: '莎拉',
+                        text: '我知道。今天早上我去了他常去的钓鱼点。他最喜欢的椅子还在那里，但不见他的踪影。他的钓具箱是打开的，好像他匆忙离开了。地上有泥泞的脚印……但看起来很奇怪，像是有人拖着重物。'
+                    },
+                    {
+                        timestamp: '10/10/2025, 13:15:44',
+                        from: '莎拉',
+                        to: '伯尼',
+                        text: '伯尼，我看到你上周在镇民大会上和威尔逊争吵。你大喊着"揭露真相"，他看起来很害怕。那是怎么回事？'
+                    },
+                    {
+                        timestamp: '10/10/2025, 11:22:08',
+                        from: '莎拉',
+                        to: '杰克',
+                        text: '杰克，你最后一次见到威尔逊是什么时候？他有提到要去什么不寻常的地方吗？我还得问……三天前凌晨2点，你的船为什么在北码头？陈太太从窗户看到的。'
+                    },
+                    {
+                        timestamp: '10/09/2025, 18:20:41',
+                        from: '杰克',
+                        to: '莎拉',
+                        text: '两天前，日落时分。他嘀咕着什么"石头中的规律"，朝着老灯塔走去。看起来很焦躁。他不停地说"从沉默中获利者将被其巧舌如簧所揭露。"很奇怪，对吧？'
+                    },
+                    {
+                        timestamp: '10/09/2025, 16:45:12',
+                        from: '莎拉',
+                        to: '武',
+                        text: '武，你祖父的日记里不是提到过灯塔的事吗？还有，我在你店附近发现了威尔逊的眼镜。你能解释一下吗？'
+                    },
+                    {
+                        timestamp: '10/09/2025, 14:33:28',
+                        from: '莎拉',
+                        to: '汤普森先生',
+                        text: '汤普森，我知道你和威尔逊有商业纠纷。关于1987年的地契什么的？有人听到你说"他知道得太多了，他会后悔的。"能详细说说吗？'
+                    },
+                    {
+                        timestamp: '10/09/2025, 12:18:55',
+                        from: '莎拉',
+                        to: '柴犬',
+                        text: '今天早上柴犬把我带到威尔逊撕破的夹克那里。上面覆盖着红土——只有在老采石场附近才有的那种。但奇怪的是：上面还有昂贵古龙水的痕迹。这座岛上谁会用古龙水？'
+                    }
+                ],
+                "王明": [
+                    {
+                        timestamp: '10/10/2025, 16:45:22',
+                        from: '马库斯',
+                        to: '伯尼',
+                        text: '伯尼，我在北码头发现了威尔逊的钓鱼竿。钓线是被切断的，不是断的。有人故意切断了它。我还在他的船上发现了你的抗议传单。你写着"真相会让我们自由，但首先它会摧毁那些隐藏它的人。"'
+                    },
+                    {
+                        timestamp: '10/10/2025, 15:20:18',
+                        from: '马库斯',
+                        to: '杰克',
+                        text: '杰克，你的故事说不通。你说威尔逊失踪时你在出海捕鱼，但我检查时你的渔网完全是干的。你到底在哪里？为什么一直避免眼神接触？'
+                    },
+                    {
+                        timestamp: '10/10/2025, 12:15:08',
+                        from: '武',
+                        to: '马库斯',
+                        text: '马库斯，我得告诉你一些事。昨晚我在森林空地附近看到了灯光。不是灯笼——它们以几何图案移动，像是仪式。我还听到了吟唱……听起来像汤普森的声音混杂着其他人的。'
+                    },
+                    {
+                        timestamp: '10/10/2025, 09:33:44',
+                        from: '马库斯',
+                        to: '汤普森先生',
+                        text: '汤普森，你在这里住得最久。以前发生过这样的事吗？人们毫无踪迹地消失？还有，你上个月为什么帮威尔逊还清了抵押贷款？你想从他那里得到什么回报？'
+                    },
+                    {
+                        timestamp: '10/09/2025, 20:30:55',
+                        from: '汤普森先生',
+                        to: '马库斯',
+                        text: '别再挖掘了，马库斯。有些秘密是有理由被埋葬的。我父亲让我发誓永远不提1987年的事。"守护者必须保持沉默，否则就会成为祭品"——这是他的原话。听从它们。'
+                    },
+                    {
+                        timestamp: '10/09/2025, 14:18:29',
+                        from: '马库斯',
+                        to: '莎拉',
+                        text: '我发现从威尔逊家通往洞穴的新鲜靴印。但它们就这样……停了。就像他在半步中消失了。莎拉，我得告诉你一些事——我找到了1987年的日记条目。上面列出了七个名字。六个已经死了。汤普森是第七个。威尔逊本该是第八个。'
+                    },
+                    {
+                        timestamp: '10/09/2025, 11:45:33',
+                        from: '马库斯',
+                        to: '武',
+                        text: '武，我看到你昨晚在店后面烧纸。上面有威尔逊签名的旧文件。商业合同？债务？你在隐瞒什么？你看到我时，手在发抖。'
+                    },
+                    {
+                        timestamp: '10/09/2025, 08:22:16',
+                        from: '马库斯',
+                        to: '伯尼',
+                        text: '伯尼，有人告诉我你两周前威胁过威尔逊。说如果他不加入你的"运动"，就会有后果。激进主义是你真正的动机，还是有更黑暗的东西？'
+                    }
+                ],
+                "张杰克": [
+                    {
+                        timestamp: '10/10/2025, 17:10:33',
+                        from: '杰克',
+                        to: '莎拉',
+                        text: '莎拉，水有问题。昨晚我听到船甲板上有脚步声——沉重、刻意的步伐。但当我去查看时，没有人在那里。只有湿漉漉的脚印一直到船边就停了。它们闻起来像汤普森用的那种昂贵肥皂。'
+                    },
+                    {
+                        timestamp: '10/10/2025, 13:42:19',
+                        from: '杰克',
+                        to: '马库斯',
+                        text: '鱼群完全放弃了北湾。我捕鱼40年从未见过这种情况。它们在躲避下面的某些东西。马库斯，你得相信我——我可能有债务，但我永远不会伤害威尔逊。即使他拒绝借钱给我。'
+                    },
+                    {
+                        timestamp: '10/10/2025, 11:55:27',
+                        from: '杰克',
+                        to: '伯尼',
+                        text: '伯尼，我看到你和武上周在老码头秘密会面。你递给他一个厚信封。他看起来很害怕。怎么回事？你们两个在合作什么吗？威尔逊也看到了——他告诉我的。'
+                    },
+                    {
+                        timestamp: '10/10/2025, 10:28:55',
+                        from: '柴犬',
+                        to: '杰克',
+                        text: '柴犬盯着老码头疯狂地吠叫，毛发竖起。拒绝靠近水边。它一直在挖一个木板松动的地方……下面埋着什么东西。'
+                    },
+                    {
+                        timestamp: '10/09/2025, 19:55:44',
+                        from: '杰克',
+                        to: '伯尼',
+                        text: '伯尼，今天早上我收网时发现它们被撕碎了，但不是任何我认识的鱼或鲨鱼造成的。切口太精确了，几乎是外科手术般的。就像有人用了一把非常锋利的刀。我发现一块布料卡在里面——看起来像昂贵西装的一部分。'
+                    },
+                    {
+                        timestamp: '10/09/2025, 08:15:22',
+                        from: '杰克',
+                        to: '武',
+                        text: '你提到的那些符号——我也看到了。刻在码头的下面。晚上会微弱发光。我没有想象。但问题是：三周前我看到你在柱子上刻类似的东西。你说是"为了保护"。保护什么？'
+                    },
+                    {
+                        timestamp: '10/09/2025, 06:40:11',
+                        from: '杰克',
+                        to: '汤普森先生',
+                        text: '汤普森，我知道你给威尔逊买了人寿保险。50万美元，你是受益人。威尔逊亲口告诉我的——他很害怕。说你在结清他的债务后让他签的。"保险"还是更黑暗的东西？'
+                    },
+                    {
+                        timestamp: '10/09/2025, 05:18:33',
+                        from: '杰克',
+                        to: '莎拉',
+                        text: '我得坦白一些事。威尔逊发现我为了还债在走私货物。他威胁要举报我，除非我帮他调查"阴谋"。但我发誓我没有伤害他。他给我的谜语毫无意义："商人卖真相，活动家买谎言，长者守秘密，但当智慧死去，谁获利？"'
+                    }
+                ],
+                "伯尼": [
+                    {
+                        timestamp: '10/10/2025, 18:25:17',
+                        from: '伯尼',
+                        to: '莎拉',
+                        text: '我们需要立即组织一次正式的搜索队。威尔逊不会就这样消失的。我检查了他的房子——门没锁，桌上的咖啡还是温的。他惊慌失措地离开了。但莎拉……我得坦白一些事。威尔逊发现我一直在挪用激进基金的捐款。他说除非我停止调查汤普森公司，否则就要揭发我。'
+                    },
+                    {
+                        timestamp: '10/10/2025, 11:30:42',
+                        from: '伯尼',
+                        to: '马库斯',
+                        text: '马库斯，我在他书房找到了威尔逊的日记。昨天的最后一条写着："他们是对的。汇合是真的。我在石圈看到了他们。去对质——"就到这里结束了。笔还在纸上。但一周前还有另一条："B知道钱的事。T知道1987年的事。J欠我5万。他们中的一个会先崩溃。"'
+                    },
+                    {
+                        timestamp: '10/10/2025, 07:44:18',
+                        from: '汤普森先生',
+                        to: '伯尼',
+                        text: '别再问问题了，伯尼。别再组织搜索了。这座岛上有些事最好别管。你的激进主义会害死人。我知道你对那些捐款基金做了什么。我知道你的赌债。保持安静，否则加入威尔逊。'
+                    },
+                    {
+                        timestamp: '10/09/2025, 21:18:29',
+                        from: '伯尼',
+                        to: '武',
+                        text: '武，汤普森在隐瞒什么。他今天威胁我——告诉我"让过去埋葬"，否则我会"加入其他人"。什么其他人？还有，上周二午夜你为什么在他庄园？我看到你的送货卡车在那里。你在送什么？'
+                    },
+                    {
+                        timestamp: '10/09/2025, 15:52:07',
+                        from: '伯尼',
+                        to: '杰克',
+                        text: '我查阅了镇档案。有一个规律——每13年就有人在秋分期间失踪。记录可以追溯到1896年。今年又是第13年。杰克，你在威尔逊失踪前两周向他要了一笔巨额贷款。他拒绝了。这就是动机。'
+                    },
+                    {
+                        timestamp: '10/09/2025, 13:28:44',
+                        from: '伯尼',
+                        to: '马库斯',
+                        text: '马库斯，我发现了一些令人不安的东西。威尔逊有我们七个人的照片。在每张照片背后，他写了注释："战士寻求正义但隐藏着过去的罪行。活动家宣扬真相但偷穷人的钱。商人交易秘密。渔夫淹没在债务中。"他在指控谁？'
+                    },
+                    {
+                        timestamp: '10/09/2025, 10:15:39',
+                        from: '伯尼',
+                        to: '武',
+                        text: '你祖父的日记提到"七人永不可成六人"。但我们已经是七个人了，威尔逊是第八个。除非……除非我们中的一个不是他们声称的人。武，你的文件说你三年前到的，但我在1987年的航运记录中发现了你的名字。'
+                    }
+                ],
+                "Hachi": [
+                    {
+                        timestamp: '10/10/2025, 16:20:50',
+                        from: '杰克',
+                        to: '八',
+                        text: '乖孩子，别怕！怎么了？你在洞穴附近闻到了什么？我从没见过你这么害怕……等等，你一直在汤普森的大门那里抓挠。只有闻到血腥味时你才会这样做。天哪。'
+                    },
+                    {
+                        timestamp: '10/10/2025, 14:55:33',
+                        from: '莎拉',
+                        to: '八',
+                        text: '八拒绝靠近北边的海滩。它呜咽着拼命往后拉，差点扯断了牵引绳。狗能感知到我们人类察觉不到的东西。但它一直给我带来撕裂的布料碎片——昂贵的布料，像是汤普森西装上的。而且上面沾着某种深色的东西。'
+                    },
+                    {
+                        timestamp: '10/10/2025, 12:08:44',
+                        from: '马库斯',
+                        to: '柴犬',
+                        text: '发现柴犬在古老的石圈附近疯狂地挖掘。它挖出了威尔逊夹克的一块碎片——上面覆盖着某种洗不掉的深色残留物。但下面还有一张名片："汤普森联合公司——收债务，守秘密"。'
+                    },
+                    {
+                        timestamp: '10/09/2025, 22:40:11',
+                        from: '八',
+                        to: '杰克',
+                        text: '凌晨3点47分，八对着月亮嚎叫，吵醒了整个家。指着灯塔的方向。直到日出才停下来。它的爪子上沾满了泥巴——和在采石场发现威尔逊夹克处的红土一样。'
+                    },
+                    {
+                        timestamp: '10/09/2025, 17:33:28',
+                        from: '武',
+                        to: '八',
+                        text: '八把我带到寺庙废墟附近的一个隐藏藏匿处。里面有：威尔逊的眼镜、一个奇怪的金属装置，还有一张用血标记了石圈的地图。但还有一张纸条："如果你在读这个，我已经死了。答案在于谁从我的沉默中获益最多。跟着钱走，不要跟着谜团。密码：1987RITUAL"'
+                    },
+                    {
+                        timestamp: '10/09/2025, 15:44:18',
+                        from: '伯尼',
+                        to: '八',
+                        text: '八今天攻击了汤普森——直接扑向他，露出牙齿。我们不得不把它拉开。汤普森的袖子被撕破了，而且……他手臂上有新鲜的抓痕。还有旧的抓痕，像是搏斗留下的。汤普森笑着说没事，但他的手在发抖。'
+                    },
+                    {
+                        timestamp: '10/09/2025, 09:22:55',
+                        from: '莎拉',
+                        to: '八',
+                        text: '八在海边发现了一个埋藏的保险箱。里面有我们七个人的照片，每张照片上都画了红色的叉，只有汤普森的除外。还有一个谜语："七罪一审判。七命一仇恨。当第八人寻真相，第一人将抹证据。"'
+                    }
+                ],
+                "竹内武": [
+                    {
+                        timestamp: '10/10/2025, 15:35:28',
+                        from: '武',
+                        to: '莎拉',
+                        text: '莎拉，我终于翻译了祖父的日记。他写了关于"汇合"的事——当世界之间的帷幕变薄时。他记录了1961年、1974年、1987年、2000年、2013年的失踪……今晚是下一次汇合。但还有更多："背负繁荣印记的人将索取终极代价。小心戴着两副面孔的长者。"'
+                    },
+                    {
+                        timestamp: '10/10/2025, 10:20:44',
+                        from: '武',
+                        to: '伯尼',
+                        text: '看看我在码头柱子上发现的这个符号。昨天还不在那里，我确定。这和祖父警告的"守望者"是同一个符号。伯尼，我得告诉你——汤普森一直在买下所有出现这些符号的土地。他比我们其他人更早知道它们。'
+                    },
+                    {
+                        timestamp: '10/10/2025, 08:15:33',
+                        from: '杰克',
+                        to: '武',
+                        text: '武，那些古老的符号是什么意思？我到处都能看到它们——在树上、岩石上，甚至刻在我船的船体上。它们在增多。你说它们是"保护符"，但威尔逊告诉我它们实际上是标记。标记什么？'
+                    },
+                    {
+                        timestamp: '10/09/2025, 23:15:37',
+                        from: '武',
+                        to: '马库斯',
+                        text: '当你叠加这些符号时，它们形成了一张地图。它们都指向灯塔下方的水下洞穴。祖父的最后一条警告："满月时千万不要进入。"但我对你们所有人撒谎了。我进去过。我看到了东西……证据。汤普森几十年来一直在做的事情的证据。'
+                    },
+                    {
+                        timestamp: '10/09/2025, 19:42:55',
+                        from: '武',
+                        to: '汤普森先生',
+                        text: '我知道1987年你在那里，汤普森。我找到了照片——你、我祖父，还有三个人在石圈。只有你和祖父幸存。发生了什么？还有，你为什么每月付我1万美元让我对我发现的航运清单保持沉默？'
+                    },
+                    {
+                        timestamp: '10/09/2025, 14:28:11',
+                        from: '武',
+                        to: '杰克',
+                        text: '杰克，我得坦白。我一直雕刻的那些符号——它们不是为了保护。它们是警告。祖父留下了指示："标记尸体所在之处，让活人知道该逃跑。"岛上有6个标记。很快会有第7个。'
+                    },
+                    {
+                        timestamp: '10/09/2025, 11:50:44',
+                        from: '武',
+                        to: '伯尼',
+                        text: '伯尼，你问到我1987年的航运记录。你说得对——我不应该在这里。但那是我父亲，不是我。他逃离日本时用我的名字作为化名。他在这里目睹了可怕的事情，汤普森付钱让他消失。现在汤普森也拥有我了。父亲留下的谜语："施予之手亦能夺取。"'
+                    }
+                ],
+                "汤普森先生": [
+                    {
+                        timestamp: '10/10/2025, 19:40:55',
+                        from: '莎拉',
+                        to: '汤普森先生',
+                        text: '汤普森，你为什么不帮我们寻找威尔逊？你们是几十年的朋友！你在怕什么？还是你害怕我们会发现什么？我看到了合同——威尔逊欠你一切。他的房子、船、土地。现在都在你名下了。'
+                    },
+                    {
+                        timestamp: '10/10/2025, 09:15:22',
+                        from: '汤普森先生',
+                        to: '马库斯',
+                        text: '我警告过威尔逊别再调查石圈。我告诉过他1987年发生了什么。有些门，一旦打开，就永远无法关上。他不听。现在太晚了。马库斯，我对你坦白——我从每次失踪中获利。房地产价值下跌，我买入，然后它们又上涨。这只是生意。但我没有杀人。'
+                    },
+                    {
+                        timestamp: '10/10/2025, 06:33:47',
+                        from: '汤普森先生',
+                        to: '伯尼',
+                        text: '你的搜索队只会给纪念碑增加更多名字。我以前见过这种事。岛屿索取它应得的。每。十三。年。伯尼，我知道你的债务。赌场欠20万美元。如果你停止调查，我可以让它们消失。好好考虑一下。'
+                    },
+                    {
+                        timestamp: '10/09/2025, 17:50:18',
+                        from: '汤普森先生',
+                        to: '武',
+                        text: '你祖父知道真相。他有理由保密。岛屿有规则。打破它们，你不只是死——你会成为它的一部分。永远守望。永远等待。但在你我之间，武——这些不是超自然死亡。它们非常人性化。非常有利可图。是的，自1974年以来，我策划了每一次。'
+                    },
+                    {
+                        timestamp: '10/09/2025, 13:28:44',
+                        from: '汤普森先生',
+                        to: '杰克',
+                        text: '远离北边水域，杰克。特别是今晚。洞穴里的东西不是自然的。1987年我失去了兄弟。别让我再看一次。还有，杰克——我知道走私的事。我知道债务。威尔逊也知道。他要揭发我们两个。你的动机和我一样多。'
+                    },
+                    {
+                        timestamp: '10/09/2025, 10:44:33',
+                        from: '汤普森先生',
+                        to: '莎拉',
+                        text: '莎拉，你是个聪明的女人。你看到了规律。让我给你一个威尔逊留给我的谜语："当七人站立被指控，一人持刀，谁有罪——刀刃还是赋予它生命的人？"这里每个人都有理由想让威尔逊消失。这里每个人都有罪。'
+                    },
+                    {
+                        timestamp: '10/09/2025, 08:17:55',
+                        from: '汤普森先生',
+                        to: '马库斯',
+                        text: '马库斯，我知道你找到了我的账簿。是的，我借钱给这个镇上的每个人。是的，我收取利息。是的，威尔逊发现我一直收取40%的非法利率。他威胁要向联邦当局举报我。那会毁了我。但我有不在场证明——他失踪时我一整天都在大陆的银行。'
+                    },
+                    {
+                        timestamp: '10/09/2025, 05:33:21',
+                        from: '汤普森先生',
+                        to: '伯尼',
+                        text: '伯尼，让我告诉你1987年真正发生了什么。七个人在石圈举行仪式——试图召唤繁荣。成功了。但代价是血。一个人必须死，其他人才能繁荣。我们抽签。我兄弟输了。从那以后我一直背负着这份罪恶感。威尔逊发现了。他想揭露我们所有人——你、我、武的祖父、杰克的父亲。'
+                    }
+                ]
+            };
+            
+            const conversations = characterConversations[char.name] || [];
+            
+            if (conversations.length === 0) {
+                conversationsSection.innerHTML = '<div style="color: #cbd5e1; padding: 15px; text-align: center;">暂无对话记录。</div>';
+            }
+            
+            conversations.forEach(conv => {
+                const convBox = document.createElement('div');
+                convBox.className = 'conversation-box';
+                convBox.innerHTML = `
+                    <div class="conversation-timestamp">${conv.timestamp}</div>
+                    <div class="conversation-from">来自: ${conv.from}</div>
+                    <div class="conversation-to">至: ${conv.to}</div>
+                    <div class="conversation-text">${conv.text}</div>
+                `;
+                conversationsSection.appendChild(convBox);
+            });
+            
+            document.getElementById('characterModal').classList.add('show');
+            document.getElementById('modalOverlay').classList.add('show');
+        }
+        
+        function createCharacterPanel() {
+            const characterPanel = document.getElementById('characterPanel');
+            
+            const humanChars = [
+                { name: "李雪", sprite: femaleSprite, offsetX: -6, offsetY: 0, arrowX: 24, arrowY: -30 },
+                { name: "王明", sprite: warriorSprite, offsetX: -8, offsetY: 8, arrowX: 28, arrowY: -30 },
+                { name: "张杰克", sprite: maleSprite, offsetX: -5, offsetY: 0, arrowX: 24, arrowY: -30 },
+                { name: "伯尼", sprite: bernieSprite, offsetX: -8, offsetY: 0, arrowX: 32, arrowY: -40 },
+                { name: "柴犬", sprite: shibaSprite, offsetX: -7, offsetY: 0, arrowX: 24, arrowY: -30 },
+                { name: "竹内武", sprite: japaneseSprite, offsetX: -8, offsetY: 0, arrowX: 24, arrowY: -40 },
+                { name: "汤普森先生", sprite: businessmanSprite, offsetX: -8, offsetY: 0, displayName: "汤普森", arrowX: 24, arrowY: -40 }
+            ];
+            
+            characterPanel.innerHTML = '';
+            
+            humanChars.forEach((charData) => {
+                const card = document.createElement('div');
+                card.className = 'character-card';
+                
+                const spriteCanvas = document.createElement('canvas');
+                spriteCanvas.className = 'character-sprite';
+                spriteCanvas.width = 48;
+                spriteCanvas.height = 64;
+                const spriteCtx = spriteCanvas.getContext('2d');
+                spriteCtx.imageSmoothingEnabled = false;
+                
+                const drawCentered = () => {
+                    spriteCtx.clearRect(0, 0, 48, 64);
+                    const offsetX = charData.offsetX || 0;
+                    const offsetY = charData.offsetY || 0;
+                    spriteCtx.drawImage(charData.sprite, 0, 0, 24, 32, offsetX, offsetY, 48, 64);
+                };
+                
+                if (charData.sprite.complete) {
+                    drawCentered();
+                } else {
+                    charData.sprite.onload = drawCentered;
+                }
+                
+                const nameDiv = document.createElement('div');
+                nameDiv.className = 'character-name';
+                nameDiv.textContent = charData.displayName || charData.name;
+                
+                card.onclick = () => {
+                    const actualChar = characters.find(c => c.name === charData.name);
+                    if (actualChar) {
+                        camera.x = (actualChar.x * scale) - (canvas.width / 2);
+                        camera.y = (actualChar.y * scale) - (canvas.height / 2);
+                        
+                        const maxX = Math.max(0, worldWidth * scale - canvas.width);
+                        const maxY = Math.max(0, worldHeight * scale - canvas.height);
+                        camera.x = Math.max(0, Math.min(camera.x, maxX));
+                        camera.y = Math.max(0, Math.min(camera.y, maxY));
+                        
+                        selectedCharacter = actualChar;
+                        selectedCharacter.arrowOffsetX = charData.arrowX || 24;
+                        selectedCharacter.arrowOffsetY = charData.arrowY || -30;
+                        playerMarker.style.display = 'block';
+                        
+                        setTimeout(() => {
+                            playerMarker.style.display = 'none';
+                            selectedCharacter = null;
+                        }, 3000);
+                        
+                        document.querySelectorAll('.character-card').forEach(c => c.classList.remove('active'));
+                        card.classList.add('active');
+                        setTimeout(() => card.classList.remove('active'), 2000);
+                    }
+                };
+                
+                card.appendChild(spriteCanvas);
+                card.appendChild(nameDiv);
+                characterPanel.appendChild(card);
+            });
+        }
+        
+        function updatePlayerPosition() {
+            player.x = (camera.x + canvas.width / 2) / scale;
+            player.y = (camera.y + canvas.height / 2) / scale;
+        }
+        
+        function updateMinimap() {
+            if (!worldImage.complete || worldWidth === 0) return;
+            
+            minimapCtx.clearRect(0, 0, minimapCanvas.width, minimapCanvas.height);
+            
+            const minimapScale = Math.min(
+                minimapCanvas.width / worldWidth,
+                minimapCanvas.height / worldHeight
+            );
+            
+            const minimapWorldWidth = worldWidth * minimapScale;
+            const minimapWorldHeight = worldHeight * minimapScale;
+            
+            minimapCtx.drawImage(
+                worldImage,
+                0, 0,
+                worldWidth, worldHeight,
+                0, 0,
+                minimapWorldWidth, minimapWorldHeight
+            );
+            
+            characters.forEach(char => {
+                if (char.type === 'human') {
+                    const charX = char.x * minimapScale;
+                    const charY = char.y * minimapScale;
+                    
+                    minimapCtx.save();
+                    minimapCtx.imageSmoothingEnabled = false;
+                    minimapCtx.drawImage(
+                        char.sprite,
+                        0, 0, 24, 12,
+                        charX - 3, charY - 3,
+                        6, 6
+                    );
+                    minimapCtx.restore();
+                }
+            });
+            
+            const viewportWidth = (canvas.width / scale) * minimapScale;
+            const viewportHeight = (canvas.height / scale) * minimapScale;
+            const viewportX = (camera.x / scale) * minimapScale;
+            const viewportY = (camera.y / scale) * minimapScale;
+            
+            minimapViewport.style.left = viewportX + 'px';
+            minimapViewport.style.top = viewportY + 'px';
+            minimapViewport.style.width = viewportWidth + 'px';
+            minimapViewport.style.height = viewportHeight + 'px';
+            
+            const playerMinimapX = player.x * minimapScale;
+            const playerMinimapY = player.y * minimapScale;
+            
+            playerDot.style.left = (playerMinimapX - 6) + 'px';
+            playerDot.style.top = (playerMinimapY - 6) + 'px';
+            
+            if (selectedCharacter) {
+                const charScreenX = (selectedCharacter.x * scale) - camera.x;
+                const charScreenY = (selectedCharacter.y * scale) - camera.y;
+                playerMarker.style.left = (charScreenX + (selectedCharacter.arrowOffsetX || 24)) + 'px';
+                playerMarker.style.top = (charScreenY + (selectedCharacter.arrowOffsetY || -30)) + 'px';
+            }
+        }
+        
+        window.addEventListener('keydown', (e) => {
+            keys[e.key.toLowerCase()] = true;
+        });
+        
+        window.addEventListener('keyup', (e) => {
+            keys[e.key.toLowerCase()] = false;
+        });
+        
+        canvas.addEventListener('mousedown', (e) => {
+            const rect = canvas.getBoundingClientRect();
+            const clickX = e.clientX - rect.left;
+            const clickY = e.clientY - rect.top;
+            
+            const worldClickX = (clickX / scale) + (camera.x / scale);
+            const worldClickY = (clickY / scale) + (camera.y / scale);
+            
+            let clickedCharacter = false;
+            
+            characters.forEach(char => {
+                if (char.type === "human") {
+                    const distance = Math.sqrt(
+                        Math.pow(worldClickX - char.x, 2) + 
+                        Math.pow(worldClickY - char.y, 2)
+                    );
+                    
+                    if (distance < 50) {
+                        openCharacterModal(char);
+                        clickedCharacter = true;
+                        return;
+                    }
+                }
+            });
+            
+            if (!clickedCharacter) {
+                isDragging = true;
+                dragStart = { x: e.clientX, y: e.clientY };
+            }
+        });
+        
+        canvas.addEventListener('mousemove', (e) => {
+            if (isDragging) {
+                const dx = e.clientX - dragStart.x;
+                const dy = e.clientY - dragStart.y;
+                
+                camera.x -= dx;
+                camera.y -= dy;
+                
+                dragStart = { x: e.clientX, y: e.clientY };
+            }
+        });
+        
+        canvas.addEventListener('mouseup', () => {
+            isDragging = false;
+        });
+        
+        canvas.addEventListener('mouseleave', () => {
+            isDragging = false;
+        });
+        
+        canvas.addEventListener('wheel', (e) => {
+            e.preventDefault();
+            camera.y += e.deltaY * 0.5;
+        });
+        
+        minimapCanvas.addEventListener('click', (e) => {
+            const rect = minimapCanvas.getBoundingClientRect();
+            const clickX = e.clientX - rect.left;
+            const clickY = e.clientY - rect.top;
+            
+            const minimapScale = Math.min(
+                minimapCanvas.width / worldWidth,
+                minimapCanvas.height / worldHeight
+            );
+            
+            const worldX = (clickX / minimapScale) * scale;
+            const worldY = (clickY / minimapScale) * scale;
+            
+            camera.x = worldX - canvas.width / 2;
+            camera.y = worldY - canvas.height / 2;
+        });
+        
+        window.addEventListener('resize', () => {
+            canvas.width = window.innerWidth - sidePanelWidth;
+            canvas.height = window.innerHeight;
+            
+            if (worldWidth > 0) {
+                scale = canvas.width / worldWidth;
+            }
+        });
+        
+        function updateCamera() {
+            const moveSpeed = camera.speed / scale;
+            if (keys['arrowleft'] || keys['a']) camera.x -= moveSpeed;
+            if (keys['arrowright'] || keys['d']) camera.x += moveSpeed;
+            if (keys['arrowup'] || keys['w']) camera.y -= moveSpeed;
+            if (keys['arrowdown'] || keys['s']) camera.y += moveSpeed;
+            
+            const scaledWorldWidth = worldWidth * scale;
+            const scaledWorldHeight = worldHeight * scale;
+            
+            const maxX = Math.max(0, scaledWorldWidth - canvas.width);
+            const maxY = Math.max(0, scaledWorldHeight - canvas.height);
+            
+            camera.x = Math.max(0, Math.min(camera.x, maxX));
+            camera.y = Math.max(0, Math.min(camera.y, maxY));
+            
+            updatePlayerPosition();
+        }
+        
+        function drawWorld() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            ctx.save();
+            ctx.scale(scale, scale);
+            
+            const camX = camera.x / scale;
+            const camY = camera.y / scale;
+            
+            ctx.drawImage(
+                worldImage,
+                camX, camY,
+                canvas.width / scale, canvas.height / scale,
+                0, 0,
+                canvas.width / scale, canvas.height / scale
+            );
+            
+            ctx.restore();
+        }
+        
+        function gameLoop() {
+            updateCamera();
+            updateCharacters();
+            drawWorld();
+            drawCharacters();
+            updateMinimap();
+            
+            waterOffset += 0.5;
+            if (waterOffset > 100) waterOffset = 0;
+            
+            requestAnimationFrame(gameLoop);
+        }
+        
+        const infoButton = document.getElementById('infoButton');
+        const infoModal = document.getElementById('infoModal');
+        const modalOverlay = document.getElementById('modalOverlay');
+        const closeModal = document.getElementById('closeModal');
+        const closeCharModal = document.getElementById('closeCharModal');
+        const mysteryModal = document.getElementById('mysteryModal');
+        const closeMysteryModal = document.getElementById('closeMysteryModal');
+        
+        const votes = {
+            '李雪': 0,
+            '王明': 0,
+            '张杰克': 0,
+            '伯尼': 0,
+            '柴犬': 0,
+            '竹内武': 0,
+            '汤普森先生': 0
+        };
+        
+        function loadVotes() {
+            const saved = localStorage.getItem('hwland_votes');
+            if (saved) {
+                const savedVotes = JSON.parse(saved);
+                Object.keys(savedVotes).forEach(char => {
+                    votes[char] = savedVotes[char];
+                    document.getElementById('vote-' + char).textContent = votes[char];
+                });
+            }
+            
+            const savedUserVoted = localStorage.getItem('hwland_userVoted');
+            if (savedUserVoted === 'true') {
+                userVoted = true;
+                document.querySelectorAll('.vote-option').forEach(opt => {
+                    opt.style.opacity = '0.5';
+                    opt.style.cursor = 'not-allowed';
+                });
+            }
+            
+            const savedEndTime = localStorage.getItem('hwland_countdown_end');
+            if (savedEndTime) {
+                const endTime = parseInt(savedEndTime);
+                const now = Date.now();
+                const remaining = Math.floor((endTime - now) / 1000);
+                if (remaining > 0) {
+                    countdownSeconds = remaining;
+                } else {
+                    countdownSeconds = 0;
+                    // If timer already expired, show the result immediately
+                    document.getElementById('guiltyName').textContent = '汤普森先生';
+                    document.getElementById('guiltyReason').textContent = '策划50年失踪案。持有威尔逊50万美元保险单。威尔逊发现非法高利贷(40%利率)并准备向联邦当局举报。汤普森自1974年以来至少谋杀了6人以获取经济利益,利用"仪式"和"岛屿诅咒"作为掩护。他系统性地消灭任何可能揭露他的人。证据来源:威尔逊的隐藏录音(密码1987RITUAL解锁)、角色对话以及汤普森对武的坦白。';
+                    document.getElementById('guiltyAnnouncement').style.display = 'block';
+                }
+            } else {
+                localStorage.setItem('hwland_countdown_end', (Date.now() + 8 * 60 * 1000).toString());
+            }
+        }
+        
+        function saveVotes() {
+            localStorage.setItem('hwland_votes', JSON.stringify(votes));
+            localStorage.setItem('hwland_userVoted', userVoted.toString());
+        }
+        
+        let userVoted = false;
+        let countdownSeconds = 8 * 60; // 8 minutes
+        let votingActive = true; // Track if voting is still active
+        
+        // Start fresh 8-minute timer on page load
+        localStorage.removeItem('hwland_countdown_end');
+        localStorage.removeItem('hwland_votes'); // Clear old votes
+        localStorage.removeItem('hwland_userVoted'); // Clear user vote status
+        localStorage.setItem('hwland_countdown_end', (Date.now() + 8 * 60 * 1000).toString());
+        
+        // Add fake votes at 4 per minute (every 15 seconds)
+        setInterval(() => {
+            if (votingActive && countdownSeconds > 0) {
+                // Pick 1 random character to get a vote
+                const characters = Object.keys(votes);
+                const randomChar = characters[Math.floor(Math.random() * characters.length)];
+                votes[randomChar]++;
+                document.getElementById('vote-' + randomChar).textContent = votes[randomChar];
+                saveVotes();
+            }
+        }, 15000); // Every 15 seconds (4 votes per minute)
+        
+        loadVotes();
+        
+        function updateCountdown() {
+            const minutes = Math.floor(countdownSeconds / 60);
+            const seconds = countdownSeconds % 60;
+            document.getElementById('countdown').textContent = 
+                `${minutes}:${seconds.toString().padStart(2, '0')}`;
+            
+            if (countdownSeconds > 0) {
+                countdownSeconds--;
+            } else {
+                // Timer is up - disable voting and reveal Mr. Thompson as guilty
+                votingActive = false;
+                
+                document.getElementById('guiltyName').textContent = '汤普森先生';
+                document.getElementById('guiltyReason').textContent = '策划50年失踪案。持有威尔逊50万美元保险单。威尔逊发现非法高利贷(40%利率)并准备向联邦当局举报。汤普森自1974年以来至少谋杀了6人以获取经济利益,利用"仪式"和"岛屿诅咒"作为掩护。他系统性地消灭任何可能揭露他的人。证据来源:威尔逊的隐藏录音(密码1987RITUAL解锁)、角色对话以及汤普森对武的坦白。';
+                document.getElementById('guiltyAnnouncement').style.display = 'block';
+                
+                // Disable all voting buttons
+                document.querySelectorAll('.vote-option').forEach(opt => {
+                    opt.style.opacity = '0.5';
+                    opt.style.cursor = 'not-allowed';
+                    opt.onclick = null;
+                });
+                
+                // Keep the announcement visible (no auto-hide, no restart)
+            }
+        }
+        
+        setInterval(updateCountdown, 1000);
+        
+        window.copyCA = function() {
+            const caText = document.getElementById('caText').textContent;
+            navigator.clipboard.writeText(caText).then(() => {
+                const originalText = document.getElementById('caText').textContent;
+                document.getElementById('caText').textContent = '已复制!';
+                document.getElementById('caText').style.color = '#22c55e';
+                setTimeout(() => {
+                    document.getElementById('caText').textContent = originalText;
+                    document.getElementById('caText').style.color = '';
+                }, 1500);
+            }).catch(err => {
+                alert('Failed to copy: ' + err);
+            });
+        }
+        
+        window.vote = function(character) {
+            if (!votingActive) {
+                alert('Voting has ended!');
+                return;
+            }
+            
+            if (userVoted) {
+                alert('You have already voted!');
+                return;
+            }
+            
+            votes[character]++;
+            document.getElementById('vote-' + character).textContent = votes[character];
+            userVoted = true;
+            
+            saveVotes();
+            
+            document.querySelectorAll('.vote-option').forEach(opt => {
+                opt.style.opacity = '0.5';
+                opt.style.cursor = 'not-allowed';
+            });
+        }
+        
+        function openMysteryModal(mysteryType) {
+            const mysteries = {
+                'wilson': {
+                    title: '🔍 威尔逊失踪 - 第三天',
+                    content: `
+                        <div class="mystery-section">
+                            <div class="mystery-section-title">失踪</div>
+                            <div class="mystery-section-content">
+                                老威尔逊已经失踪三天了。发现时他的咖啡还是温的,渔具盒在他钓鱼的地方打开着,他最后的日记写道:"去对质——"【未完成】
+                            </div>
+                        </div>
+                        <div class="mystery-section">
+                            <div class="mystery-section-title">关键证据</div>
+                            <div class="evidence-item">📍 威尔逊的夹克在采石场被发现,带有昂贵的古龙水味</div>
+                            <div class="evidence-item">👔 夹克里发现了汤普森的名片</div>
+                            <div class="evidence-item">👣 泥泞的脚印表明有重物被拖拽</div>
+                            <div class="evidence-item">🐕 柴犬拒绝靠近汤普森的大门——只有闻到血腥味时才会这样</div>
+                        </div>
+                        <div class="mystery-section">
+                            <div class="mystery-section-title">谜语</div>
+                            <div class="riddle-item">"当七人围圈而立,第八人将永不可寻"</div>
+                            <div class="mystery-section-content" style="margin-top: 10px;">
+                                这是什么意思?岛上有7个主要居民。威尔逊将是第八个……
+                            </div>
+                        </div>
+                    `
+                },
+                'insurance': {
+                    title: '💰 汤普森的秘密',
+                    content: `
+                        <div class="mystery-section">
+                            <div class="mystery-section-title">保险单</div>
+                            <div class="mystery-section-content">
+                                汤普森持有威尔逊50万美元的人寿保险单,他自己是唯一受益人。威尔逊在汤普森"结清他的债务"后签署了这份保险——但他很害怕。
+                            </div>
+                        </div>
+                        <div class="mystery-section">
+                            <div class="mystery-section-title">关键证据</div>
+                            <div class="evidence-item">💼 债务结清后,汤普森拥有威尔逊的房子、船和土地</div>
+                            <div class="evidence-item">📊 汤普森的账簿显示40%的非法利率</div>
+                            <div class="evidence-item">💸 威尔逊准备向联邦当局举报汤普森</div>
+                            <div class="evidence-item">🏦 汤普森声称威尔逊失踪时他在大陆的银行</div>
+                        </div>
+                        <div class="mystery-section">
+                            <div class="mystery-section-title">汤普森的坦白</div>
+                            <div class="mystery-section-content">
+                                在与王明的对话中,汤普森承认:"我从每次失踪中获利。房地产价值下跌,我买入,然后它们又上涨。"但他坚称自己没有杀人。
+                            </div>
+                        </div>
+                        <div class="mystery-section">
+                            <div class="mystery-section-title">谜语</div>
+                            <div class="riddle-item">"从沉默中获利者将被其巧舌如簧所揭露"</div>
+                        </div>
+                    `
+                },
+                'ritual': {
+                    title: '🕯️ 1987年仪式',
+                    content: `
+                        <div class="mystery-section">
+                            <div class="mystery-section-title">血祭</div>
+                            <div class="mystery-section-content">
+                                1987年,七个人在石圈举行了一场仪式,试图召唤繁荣。仪式成功了——但需要血的代价。他们抽签。汤普森的兄弟输了。只有汤普森和竹内武的祖父幸存。
+                            </div>
+                        </div>
+                        <div class="mystery-section">
+                            <div class="mystery-section-title">模式</div>
+                            <div class="mystery-section-content">
+                                每13年,就会有人在秋分期间失踪。记录可以追溯到1896年:
+                            </div>
+                            <div class="evidence-item">1961年 - 失踪</div>
+                            <div class="evidence-item">1974年 - 失踪</div>
+                            <div class="evidence-item">1987年 - 仪式(汤普森的兄弟死亡)</div>
+                            <div class="evidence-item">2000年 - 失踪</div>
+                            <div class="evidence-item">2013年 - 失踪</div>
+                            <div class="evidence-item">2025年 - 威尔逊消失……今晚是第13年</div>
+                        </div>
+                        <div class="mystery-section">
+                            <div class="mystery-section-title">汤普森的话</div>
+                            <div class="mystery-section-content">
+                                "岛屿索取它应得的。每。十三。年。"但后来他承认:"这些不是超自然死亡。它们非常人性化。非常有利可图。自1974年以来,我策划了每一次。"
+                            </div>
+                        </div>
+                        <div class="mystery-section">
+                            <div class="mystery-section-title">谜语</div>
+                            <div class="riddle-item">"七罪一审判。七命一仇恨。当第八人寻真相,第一人将抹证据。"</div>
+                        </div>
+                    `
+                },
+                'locked': {
+                    title: '🔒 锁定文件 - 威尔逊的证据',
+                    content: `
+                        <div class="mystery-section">
+                            <div class="mystery-section-title">⚠️ 密码保护</div>
+                            <div class="mystery-section-content">
+                                这个文件包含威尔逊的最终证据——揭示真正有罪者的确凿证据。威尔逊在失踪前隐藏了这个。
+                            </div>
+                        </div>
+                        <div class="password-input-container">
+                            <div style="color: #fbbf24; font-weight: bold; margin-bottom: 10px;">输入密码:</div>
+                            <div style="color: #cbd5e1; font-size: 12px; margin-bottom: 15px;">提示:密码隐藏在某个角色的对话中。有人提到了一个特定年份,这是关键……</div>
+                            <input type="password" id="lockedFilePassword" placeholder="输入密码...">
+                            <button onclick="checkPassword()">解锁文件</button>
+                            <div id="passwordMessage"></div>
+                        </div>
+                    `
+                },
+                'caves': {
+                    title: '🗺️ 水下洞穴',
+                    content: `
+                        <div class="mystery-section">
+                            <div class="mystery-section-title">符号</div>
+                            <div class="mystery-section-content">
+                                奇怪的符号一直出现在岛上各处——刻在树上、岩石上、码头上,甚至船体上。它们在夜间微弱发光。叠加在一起时,它们形成一张指向灯塔下方水下洞穴的地图。
+                            </div>
+                        </div>
+                        <div class="mystery-section">
+                            <div class="mystery-section-title">关键证据</div>
+                            <div class="evidence-item">🔮 竹内武一直在雕刻这些符号——声称它们是"警告"</div>
+                            <div class="evidence-item">📜 他祖父的指示:"标记尸体所在之处,让活人知道该逃跑"</div>
+                            <div class="evidence-item">⚠️ 岛上有6个标记。很快会有第7个。</div>
+                            <div class="evidence-item">🌊 鱼类完全放弃了北湾——在躲避某些东西</div>
+                            <div class="evidence-item">🌕 祖父的警告:"满月时千万不要进入"</div>
+                        </div>
+                        <div class="mystery-section">
+                            <div class="mystery-section-title">竹内武的坦白</div>
+                            <div class="mystery-section-content">
+                                "我对你们所有人撒谎了。我进过洞穴。我看到了东西……证据。汤普森几十年来一直在做的事情的证据。"汤普森一直每月支付竹内武1万美元让他保持沉默。
+                            </div>
+                        </div>
+                        <div class="mystery-section">
+                            <div class="mystery-section-title">谜语</div>
+                            <div class="riddle-item">"施予之手亦能夺取"</div>
+                            <div class="mystery-section-content" style="margin-top: 10px;">
+                                汤普森一直在"给予"每个人——贷款、付款、和解。但代价是什么?
+                            </div>
+                        </div>
+                    `
+                }
+            };
+            
+            const mystery = mysteries[mysteryType];
+            document.getElementById('mysteryModalTitle').textContent = mystery.title;
+            document.getElementById('mysteryModalContent').innerHTML = mystery.content;
+            mysteryModal.classList.add('show');
+            modalOverlay.classList.add('show');
+        }
+        
+        window.checkPassword = function() {
+            const password = document.getElementById('lockedFilePassword').value;
+            const messageDiv = document.getElementById('passwordMessage');
+            
+            if (password === '1987RITUAL') {
+                messageDiv.innerHTML = '<div class="password-success">✓ 访问授权</div>';
+                setTimeout(() => {
+                    document.getElementById('mysteryModalContent').innerHTML = `
+                        <div class="mystery-section" style="border: 3px solid #22c55e;">
+                            <div class="mystery-section-title" style="color: #22c55e;">🔓 威尔逊的最终证据 - 已解锁</div>
+                            <div class="mystery-section-content">
+                                <strong style="color: #fbbf24;">威尔逊的隐藏录音 - 2025年10月9日</strong><br><br>
+                                "如果你在听这个,我已经死了。汤普森杀了我,或者付钱让别人杀的。我有证据。多年来,我怀疑这个模式——每13年就有人失踪。我深入档案,交叉引用财产记录、保险索赔和银行转账。"
+                            </div>
+                        </div>
+                        <div class="mystery-section">
+                            <div class="mystery-section-title">真相</div>
+                            <div class="evidence-item"><strong>1974年:</strong> 汤普森策划了他的第一次谋杀。受害者欠他钱。伪装成事故。汤普森收取了保险和财产。</div>
+                            <div class="evidence-item"><strong>1987年:</strong> 仪式是真的,但汤普森控制了谁"输掉"抽签。他的兄弟发现了1974年的真相。必须死。</div>
+                            <div class="evidence-item"><strong>2000年:</strong> 另一个债务人。另一次"失踪"。另一笔保险赔付。</div>
+                            <div class="evidence-item"><strong>2013年:</strong> 竹内武的父亲目睹汤普森处理证据。汤普森收买了他,强迫他以化名离开。</div>
+                            <div class="evidence-item"><strong>2025年:</strong> 汤普森一直在系统性地消灭任何可能揭露他的人。我发现了他的账簿,显示了跨越50年的非法高利贷、保险欺诈和勒索行动。</div>
+                        </div>
+                        <div class="mystery-section" style="background: rgba(239, 68, 68, 0.2); border: 3px solid #ef4444;">
+                            <div class="mystery-section-title" style="color: #ef4444;">汤普森的动机</div>
+                            <div class="mystery-section-content">
+                                汤普森发现我找到了将他与所有失踪案件联系起来的证据。我有银行记录、伪造的保险文件和证人证词。他试图用抵押贷款收买我,让我签署保险单。当我拒绝保持沉默时,他决定我必须成为下一个"仪式祭品"。<br><br>
+                                <strong style="color: #fbbf24;">凶手是汤普森先生。</strong><br><br>
+                                50年来,他为了经济利益至少谋杀了6人。他用"仪式"和"岛屿诅咒"作为掩护。一切都是为了钱。
+                            </div>
+                        </div>
+                        <div class="mystery-section">
+                            <div class="mystery-section-title">附加证据</div>
+                            <div class="evidence-item">📁 汤普森办公室保险箱中的隐藏账簿——密码:他兄弟的死亡日期</div>
+                            <div class="evidence-item">🎙️ 此录音备份在竹内武的寺庙藏匿处</div>
+                            <div class="evidence-item">💼 显示汤普森是所有受害者受益人的保险文件</div>
+                            <div class="evidence-item">🗺️ 汤普森拥有所有前受害者的财产</div>
+                            <div class="evidence-item">💰 50年谋杀的总利润:超过320万美元</div>
+                        </div>
+                        <div class="riddle-item">
+                            "当七人站立被指控,一人持刀,谁有罪——刀刃还是赋予它生命的人?"<br><br>
+                            答案:汤普森两者都是——他是指控他人的审判者,也是持刀的凶手。
+                        </div>
+                    `;
+                }, 500);
+            } else {
+                messageDiv.innerHTML = '<div class="password-error">✗ 密码错误</div>';
+            }
+        }
+        
+        infoButton.addEventListener('click', () => {
+            infoModal.classList.add('show');
+            modalOverlay.classList.add('show');
+        });
+        
+        closeModal.addEventListener('click', () => {
+            infoModal.classList.remove('show');
+            modalOverlay.classList.remove('show');
+        });
+        
+        closeCharModal.addEventListener('click', () => {
+            document.getElementById('characterModal').classList.remove('show');
+            modalOverlay.classList.remove('show');
+        });
+        
+        closeMysteryModal.addEventListener('click', () => {
+            mysteryModal.classList.remove('show');
+            modalOverlay.classList.remove('show');
+        });
+        
+        modalOverlay.addEventListener('click', () => {
+            infoModal.classList.remove('show');
+            document.getElementById('characterModal').classList.remove('show');
+            mysteryModal.classList.remove('show');
+            modalOverlay.classList.remove('show');
+        });
+    </script>
+</body>
+</html>
